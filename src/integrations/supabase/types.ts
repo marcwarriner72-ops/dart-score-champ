@@ -14,16 +14,153 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      matches: {
+        Row: {
+          created_at: string
+          id: string
+          player_a: string
+          player_b: string
+          score_a: number | null
+          score_b: number | null
+          starts_at: string
+          status: string
+          tournament: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          player_a: string
+          player_b: string
+          score_a?: number | null
+          score_b?: number | null
+          starts_at: string
+          status?: string
+          tournament?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          player_a?: string
+          player_b?: string
+          score_a?: number | null
+          score_b?: number | null
+          starts_at?: string
+          status?: string
+          tournament?: string | null
+        }
+        Relationships: []
+      }
+      predictions: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          predicted_winner: string
+          score_a: number
+          score_b: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          predicted_winner: string
+          score_a: number
+          score_b: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          predicted_winner?: string
+          score_a?: number
+          score_b?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      leaderboard: {
+        Row: {
+          display_name: string | null
+          exact_hits: number | null
+          points: number | null
+          predictions_made: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      prediction_points: {
+        Args: {
+          m_score_a: number
+          m_score_b: number
+          p_a: number
+          p_b: number
+          p_winner: string
+        }
+        Returns: number
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +287,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
