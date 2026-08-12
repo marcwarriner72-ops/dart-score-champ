@@ -53,7 +53,7 @@ function PredictionCard({
 }: {
   match: Match;
   userId: string | undefined;
-  existing?: { predicted_winner: string; score_a: number; score_b: number };
+  existing?: { predicted_winner: string; score_a: number; score_b: number } | undefined;
 }) {
   const queryClient = useQueryClient();
   const [winner, setWinner] = useState<string>(existing?.predicted_winner ?? "");
