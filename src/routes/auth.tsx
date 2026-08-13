@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -119,6 +119,13 @@ function AuthPage() {
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
+          {mode === "signin" && (
+            <div className="text-right">
+              <Link to="/forgot-password" className="text-xs text-muted-foreground underline underline-offset-4">
+                Forgot password?
+              </Link>
+            </div>
+          )}
           <Button type="submit" disabled={loading} className="h-12 w-full font-bold uppercase">
             {loading ? "Please wait…" : mode === "signin" ? "Sign in" : "Create account"}
           </Button>
