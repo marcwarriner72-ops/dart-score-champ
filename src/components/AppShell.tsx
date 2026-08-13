@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Target, Trophy, ListChecks, Shield } from "lucide-react";
+import { LogOut, Target, Trophy, ListChecks, Shield, MessageCircle } from "lucide-react";
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useProfile, useSession } from "@/lib/league";
@@ -48,9 +48,10 @@ export function AppShell({
       <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
 
       <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-lg -translate-x-1/2 border-t border-border/60 bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
-        <div className="grid grid-cols-4">
+        <div className="grid grid-cols-5">
           <NavItem to="/dashboard" icon={<Target className="size-5" />} label="Home" />
           <NavItem to="/predict" icon={<ListChecks className="size-5" />} label="Predict" />
+          <NavItem to="/chat" icon={<MessageCircle className="size-5" />} label="Chat" />
           <NavItem to="/leaderboard" icon={<Trophy className="size-5" />} label="Table" />
           {isAdmin ? (
             <NavItem to="/admin" icon={<Shield className="size-5" />} label="Admin" />
