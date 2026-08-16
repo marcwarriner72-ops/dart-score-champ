@@ -77,20 +77,88 @@ function ProfilePage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update username"),
   });
 
+  const photo = useMutation({
+    mutationFn: async (file: File | null) => {
+      if (!file) {
+        if (profile?.avatar_url) await supabase.storage.from("avatars").remove([profile.avatar_url]);
+        const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", user!.id);
+        if (error) throw error;
+        return;
+      }
+      if (!file.type.startsWith("image/")) throw new Error("Please choose an image file");
+      if (file.size > 8 * 1024 * 1024) throw new Error("Image must be under 8MB");
+      const blob = await downscale(file);
+      const path = `${user!.id}/avatar-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, blob, { contentType: "image/jpeg", upsert: true });
+      if (upErr) throw upErr;
+      const old = profile?.avatar_url;
+      const { error } = await supabase.from("profiles").update({ avatar_url: path }).eq("id", user!.id);
+      if (error) throw error;
+      if (old) await supabase.storage.from("avatars").remove([old]);
+    },
+    onSuccess: () => {
+      toast.success("Photo updated");
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update photo"),
+  });
+
   return (
     <AppShell title="Profile" subtitle="How your friends see you">
-      <section className="panel space-y-3 p-4">
+      <section className="panel space-y-4 p-4">
         <div className="flex items-center gap-3">
-          <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
-            <UserRound className="size-5" />
-          </span>
+          <div className="relative">
+            <PlayerAvatar
+              path={profile?.avatar_url}
+              name={profile?.display_name}
+              className="size-16 text-base"
+            />
+            <button
+              type="button"
+              aria-label="Upload profile photo"
+              disabled={photo.isPending}
+              onClick={() => fileRef.current?.click()}
+              className="absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full border border-border bg-card text-primary shadow"
+            >
+              <Camera className="size-4" />
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0] ?? null;
+                e.target.value = "";
+                if (f) photo.mutate(f);
+              }}
+            />
+          </div>
           <div className="min-w-0">
             <p className="truncate font-display text-xl font-bold uppercase">
               {profile?.display_name ?? "Player"}
             </p>
             <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+            {profile?.avatar_url ? (
+              <button
+                type="button"
+                disabled={photo.isPending}
+                onClick={() => photo.mutate(null)}
+                className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground underline underline-offset-4"
+              >
+                <Trash2 className="size-3" /> Remove photo
+              </button>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">
+                {photo.isPending ? "Uploading…" : "Tap the camera to add a photo"}
+              </p>
+            )}
           </div>
         </div>
+
 
         <div className="space-y-1.5 pt-1">
           <Label htmlFor="username">Username</Label>
