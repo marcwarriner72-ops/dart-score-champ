@@ -177,7 +177,8 @@ function MatchCard({
                 </span>
               )}
             </li>
-          ))
+            );
+          })
         )}
       </ul>
     </section>
