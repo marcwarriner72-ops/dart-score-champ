@@ -47,9 +47,9 @@ function ResultsPage() {
   const { data: predictions = [] } = useVisiblePredictions();
   const { data: profiles = [] } = useProfiles();
 
-  const names = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of profiles) map.set(p.id, p.display_name);
+  const people = useMemo(() => {
+    const map = new Map<string, Person>();
+    for (const p of profiles) map.set(p.id, { name: p.display_name, avatar: p.avatar_url ?? null });
     return map;
   }, [profiles]);
 
@@ -62,7 +62,7 @@ function ResultsPage() {
   if (isLoading) {
     return (
       <AppShell title="Results" subtitle="Picks revealed at throw-off">
-        <DartLoader label="Counting the scores…" />
+        <MatchListSkeleton count={2} />
       </AppShell>
     );
   }
@@ -72,14 +72,18 @@ function ResultsPage() {
       <h2 className="font-display text-xl font-bold uppercase">In play</h2>
       <div className="mt-2 space-y-3">
         {inPlay.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing on the oche right now.</p>
+          <EmptyState
+            icon={<Target className="size-6" />}
+            title="Nothing on the oche"
+            description="When a fixture starts, everyone's picks appear here live."
+          />
         ) : (
           inPlay.map((m) => (
             <MatchCard
               key={m.id}
               match={m}
               predictions={predictions.filter((p) => p.match_id === m.id)}
-              names={names}
+              people={people}
               meId={user?.id}
             />
           ))
@@ -89,14 +93,18 @@ function ResultsPage() {
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Archive</h2>
       <div className="mt-2 space-y-3">
         {archive.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No completed matches yet.</p>
+          <EmptyState
+            icon={<Archive className="size-6" />}
+            title="Archive is empty"
+            description="Finished fixtures and the points they scored land here."
+          />
         ) : (
           archive.map((m) => (
             <MatchCard
               key={m.id}
               match={m}
               predictions={predictions.filter((p) => p.match_id === m.id)}
-              names={names}
+              people={people}
               meId={user?.id}
             />
           ))
@@ -105,6 +113,7 @@ function ResultsPage() {
     </AppShell>
   );
 }
+
 
 function MatchCard({
   match,
