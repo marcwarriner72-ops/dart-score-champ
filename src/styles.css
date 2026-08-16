@@ -112,3 +112,32 @@
   background-clip: text;
   color: transparent;
 }
+
+@keyframes dart-fly {
+  0% {
+    left: -12%;
+    opacity: 0;
+    transform: translateY(-50%) rotate(-8deg) scale(0.85);
+  }
+  15% {
+    opacity: 1;
+  }
+  70% {
+    left: 66%;
+    opacity: 1;
+    transform: translateY(-50%) rotate(0deg) scale(1);
+  }
+  85% {
+    left: 62%;
+    transform: translateY(-50%) rotate(0deg) scale(1.05);
+  }
+  100% {
+    left: 62%;
+    opacity: 0;
+    transform: translateY(-50%) rotate(0deg) scale(1);
+  }
+}
+
+.dart-fly {
+  animation: dart-fly 1.4s cubic-bezier(0.3, 0.7, 0.3, 1) infinite;
+}

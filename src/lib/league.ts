@@ -133,3 +133,45 @@ export function formatDate(iso: string) {
     minute: "2-digit",
   });
 }
+
+export function hasStarted(match: Match) {
+  return new Date(match.starts_at).getTime() <= Date.now();
+}
+
+export function isArchived(match: Match) {
+  return match.status === "finished";
+}
+
+/** Predictions from everyone that RLS lets us see (own + matches already started). */
+export function useVisiblePredictions() {
+  return useQuery({
+    queryKey: ["all-predictions"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("predictions").select("*");
+      if (error) throw error;
+      return (data ?? []) as Prediction[];
+    },
+  });
+}
+
+export function useProfiles() {
+  return useQuery({
+    queryKey: ["profiles"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, display_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useAdminIds() {
+  return useQuery({
+    queryKey: ["admin-ids"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id").eq("role", "admin");
+      if (error) throw error;
+      return (data ?? []).map((r) => r.user_id);
+    },
+  });
+}

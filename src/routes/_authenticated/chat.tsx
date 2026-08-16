@@ -110,6 +110,28 @@ function ChatPage() {
 
   return (
     <AppShell title="Chat" subtitle="League banter, live">
+      <div className="panel mb-3 flex items-center gap-2 p-3">
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Quick links
+        </span>
+        <a
+          href="https://www.paddypower.com/darts"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="ml-auto rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+        >
+          Paddy Power
+        </a>
+        <a
+          href="https://www.pdc.tv"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+        >
+          pdc.tv
+        </a>
+      </div>
+
       <div className="flex flex-col gap-3 pb-20">
         {messages.length === 0 ? (
           <div className="panel p-6 text-center text-sm text-muted-foreground">

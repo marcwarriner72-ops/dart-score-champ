@@ -1,15 +1,50 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
-import { formatDate, useMatches, useMyPredictions, useSession, type Match } from "@/lib/league";
+import { DartLoader } from "@/components/DartLoader";
+import {
+  formatDate,
+  hasStarted,
+  useMatches,
+  useMyPredictions,
+  useSession,
+  type Match,
+} from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/predict")({
   component: PredictPage,
+  head: () => ({
+    meta: [
+      { title: "Make Predictions | Darts Predictor League" },
+      {
+        name: "description",
+        content:
+          "Pick winners and exact leg scores for upcoming darts fixtures. Predictions can be edited right up until throw-off.",
+      },
+      { property: "og:title", content: "Make Predictions | Darts Predictor League" },
+      {
+        property: "og:description",
+        content: "Pick winners and exact leg scores before each darts match starts.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function PredictPage() {
@@ -17,22 +52,26 @@ function PredictPage() {
   const { data: matches = [], isLoading } = useMatches();
   const { data: predictions = [] } = useMyPredictions(user?.id);
 
-  const upcoming = matches.filter((m) => m.status === "upcoming");
+  const open = matches.filter((m) => m.status === "upcoming" && !hasStarted(m));
 
   return (
-    <AppShell title="Predict" subtitle="3 pts exact score · 1 pt correct winner">
+    <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact score">
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading matches…</p>
-      ) : upcoming.length === 0 ? (
+        <DartLoader label="Loading fixtures…" />
+      ) : open.length === 0 ? (
         <div className="panel p-6 text-center">
-          <p className="font-display text-xl uppercase">No upcoming matches</p>
+          <p className="font-display text-xl uppercase">No open fixtures</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            The admin hasn't added any fixtures yet.
+            Everything has started or finished. See how everyone called it in the{" "}
+            <Link to="/results" className="text-primary underline">
+              results
+            </Link>
+            .
           </p>
         </div>
       ) : (
         <div className="space-y-4">
-          {upcoming.map((m) => (
+          {open.map((m) => (
             <PredictionCard
               key={m.id}
               match={m}
@@ -59,17 +98,12 @@ function PredictionCard({
   const [winner, setWinner] = useState<string>(existing?.predicted_winner ?? "");
   const [scoreA, setScoreA] = useState<string>(existing ? String(existing.score_a) : "");
   const [scoreB, setScoreB] = useState<string>(existing ? String(existing.score_b) : "");
+  const [confirming, setConfirming] = useState(false);
 
   const save = useMutation({
     mutationFn: async () => {
       const a = Number(scoreA);
       const b = Number(scoreB);
-      if (!winner) throw new Error("Pick a winner");
-      if (!Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0)
-        throw new Error("Enter a valid leg score");
-      if (a === b) throw new Error("A darts match can't end level");
-      if ((a > b ? "a" : "b") !== winner)
-        throw new Error("Your leg score doesn't match your chosen winner");
       const { error } = await supabase.from("predictions").upsert(
         {
           match_id: match.id,
@@ -83,11 +117,34 @@ function PredictionCard({
       if (error) throw error;
     },
     onSuccess: () => {
-      toast.success("Prediction saved");
+      toast.success("Prediction confirmed");
       queryClient.invalidateQueries({ queryKey: ["my-predictions"] });
+      queryClient.invalidateQueries({ queryKey: ["all-predictions"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
   });
+
+  function validate() {
+    const a = Number(scoreA);
+    const b = Number(scoreB);
+    if (!winner) return "Pick a winner";
+    if (scoreA === "" || scoreB === "" || !Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0)
+      return "Enter a valid leg score";
+    if (a === b) return "A darts match can't end level";
+    if ((a > b ? "a" : "b") !== winner) return "Your leg score doesn't match your chosen winner";
+    return null;
+  }
+
+  function openConfirm() {
+    const err = validate();
+    if (err) {
+      toast.error(err);
+      return;
+    }
+    setConfirming(true);
+  }
+
+  const winnerName = winner === "a" ? match.player_a : match.player_b;
 
   return (
     <div className="panel p-4">
@@ -143,11 +200,27 @@ function PredictionCard({
 
       <Button
         className="mt-4 h-11 w-full font-bold uppercase"
-        onClick={() => save.mutate()}
+        onClick={openConfirm}
         disabled={save.isPending}
       >
         {existing ? "Update prediction" : "Submit prediction"}
       </Button>
+
+      <AlertDialog open={confirming} onOpenChange={setConfirming}>
+        <AlertDialogContent className="max-w-[20rem] rounded-xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display uppercase">Confirm prediction</AlertDialogTitle>
+            <AlertDialogDescription>
+              {winnerName} to win {scoreA}–{scoreB} in {match.player_a} vs {match.player_b}. You can
+              still edit this until the match starts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Back</AlertDialogCancel>
+            <AlertDialogAction onClick={() => save.mutate()}>Confirm</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
