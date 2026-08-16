@@ -2,12 +2,13 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Lock, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import {
   PRESET_TOURNAMENTS,
   formatDate,
+  hasStarted,
   matchFormatLabel,
   useAdminIds,
   useIsAdmin,
@@ -297,7 +298,7 @@ function NewMatchForm() {
         />
       </div>
       <Button
-        className="h-11 w-full font-bold uppercase"
+        className="h-11 w-full font-bold uppercase transition-transform active:scale-[0.98]"
         onClick={() => {
           if (!playerA.trim() || !playerB.trim()) {
             toast.error("Both players are required");
@@ -339,6 +340,8 @@ function ResultForm({ match }: { match: Match }) {
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  /** Once the throw-off time passes the fixture details are locked (enforced in the database too). */
+  const locked = hasStarted(match);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["matches"] });
@@ -416,27 +419,35 @@ function ResultForm({ match }: { match: Match }) {
           </p>
         </div>
         <div className="flex shrink-0 items-center">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Edit match details"
-            onClick={() => setEditing((v) => !v)}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-destructive"
-            aria-label="Delete match"
-            onClick={() => setConfirmDelete(true)}
-          >
-            <Trash2 className="size-4" />
-          </Button>
+          {locked ? (
+            <span className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              <Lock className="size-3" /> Locked
+            </span>
+          ) : (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Edit match details"
+                onClick={() => setEditing((v) => !v)}
+              >
+                <Pencil className="size-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-destructive"
+                aria-label="Delete match"
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 className="size-4" />
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
-      {editing && (
+      {editing && !locked && (
         <div className="mt-3 space-y-3 rounded-lg bg-secondary/40 p-3">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1.5">
@@ -493,6 +504,12 @@ function ResultForm({ match }: { match: Match }) {
       )}
 
 
+      {locked && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          This fixture has started — details are locked. You can still enter the final score.
+        </p>
+      )}
+
       <div className="mt-3 flex items-center gap-2">
         <Input
           inputMode="numeric"
@@ -510,7 +527,7 @@ function ResultForm({ match }: { match: Match }) {
           aria-label={`Legs for ${match.player_b}`}
         />
         <Button
-          className="ml-auto h-11 font-bold uppercase"
+          className="ml-auto h-11 font-bold uppercase transition-transform active:scale-95"
           onClick={() => setConfirmResult(true)}
           disabled={saveResult.isPending}
         >

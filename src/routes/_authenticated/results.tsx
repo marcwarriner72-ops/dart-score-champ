@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { Archive, Target } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { DartLoader } from "@/components/DartLoader";
+import { EmptyState } from "@/components/EmptyState";
+import { MatchListSkeleton } from "@/components/Skeletons";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
   formatDate,
   hasStarted,
@@ -13,6 +16,9 @@ import {
   type Match,
   type Prediction,
 } from "@/lib/league";
+
+type Person = { name: string; avatar: string | null };
+
 
 export const Route = createFileRoute("/_authenticated/results")({
   component: ResultsPage,
@@ -41,9 +47,9 @@ function ResultsPage() {
   const { data: predictions = [] } = useVisiblePredictions();
   const { data: profiles = [] } = useProfiles();
 
-  const names = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of profiles) map.set(p.id, p.display_name);
+  const people = useMemo(() => {
+    const map = new Map<string, Person>();
+    for (const p of profiles) map.set(p.id, { name: p.display_name, avatar: p.avatar_url ?? null });
     return map;
   }, [profiles]);
 
@@ -56,7 +62,7 @@ function ResultsPage() {
   if (isLoading) {
     return (
       <AppShell title="Results" subtitle="Picks revealed at throw-off">
-        <DartLoader label="Counting the scores…" />
+        <MatchListSkeleton count={2} />
       </AppShell>
     );
   }
@@ -66,14 +72,18 @@ function ResultsPage() {
       <h2 className="font-display text-xl font-bold uppercase">In play</h2>
       <div className="mt-2 space-y-3">
         {inPlay.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nothing on the oche right now.</p>
+          <EmptyState
+            icon={<Target className="size-6" />}
+            title="Nothing on the oche"
+            description="When a fixture starts, everyone's picks appear here live."
+          />
         ) : (
           inPlay.map((m) => (
             <MatchCard
               key={m.id}
               match={m}
               predictions={predictions.filter((p) => p.match_id === m.id)}
-              names={names}
+              people={people}
               meId={user?.id}
             />
           ))
@@ -83,14 +93,18 @@ function ResultsPage() {
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Archive</h2>
       <div className="mt-2 space-y-3">
         {archive.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No completed matches yet.</p>
+          <EmptyState
+            icon={<Archive className="size-6" />}
+            title="Archive is empty"
+            description="Finished fixtures and the points they scored land here."
+          />
         ) : (
           archive.map((m) => (
             <MatchCard
               key={m.id}
               match={m}
               predictions={predictions.filter((p) => p.match_id === m.id)}
-              names={names}
+              people={people}
               meId={user?.id}
             />
           ))
@@ -100,15 +114,16 @@ function ResultsPage() {
   );
 }
 
+
 function MatchCard({
   match,
   predictions,
-  names,
+  people,
   meId,
 }: {
   match: Match;
   predictions: Prediction[];
-  names: Map<string, string>;
+  people: Map<string, Person>;
   meId: string | undefined;
 }) {
   const finished = match.status === "finished";
@@ -137,13 +152,16 @@ function MatchCard({
         {rows.length === 0 ? (
           <li className="text-sm text-muted-foreground">No predictions were made.</li>
         ) : (
-          rows.map(({ p, pts }) => (
+          rows.map(({ p, pts }) => {
+            const person = people.get(p.user_id);
+            return (
             <li
               key={p.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2 text-sm"
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2 text-sm"
             >
+              <PlayerAvatar path={person?.avatar} name={person?.name} className="size-8 text-[10px]" />
               <span className="truncate font-semibold">
-                {p.user_id === meId ? "You" : (names.get(p.user_id) ?? "Player")}
+                {p.user_id === meId ? "You" : (person?.name ?? "Player")}
               </span>
               <span className="shrink-0 text-muted-foreground">
                 {p.predicted_winner === "a" ? match.player_a : match.player_b} · {p.score_a}–
@@ -159,7 +177,8 @@ function MatchCard({
                 </span>
               )}
             </li>
-          ))
+            );
+          })
         )}
       </ul>
     </section>
