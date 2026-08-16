@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import heroImage from "@/assets/auth-hero.jpg";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -66,7 +67,21 @@ function AuthPage() {
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col justify-center px-6 py-10">
-      <h1 className="font-display text-4xl font-bold uppercase leading-none">
+      <div className="relative overflow-hidden rounded-2xl border border-border/60">
+        <img
+          src={heroImage}
+          alt="Darts player celebrating a 170 big fish checkout in front of a dartboard"
+          width={1024}
+          height={768}
+          className="h-44 w-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <span className="absolute bottom-3 left-4 rounded-full border border-primary/40 bg-background/70 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-primary">
+          170 · The Big Fish
+        </span>
+      </div>
+
+      <h1 className="mt-6 font-display text-4xl font-bold uppercase leading-none">
         {mode === "signin" ? "Welcome back" : "Join the league"}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
@@ -74,6 +89,7 @@ function AuthPage() {
           ? "Sign in to make your picks."
           : "Create an account to start predicting."}
       </p>
+
 
       {sent ? (
         <div className="panel mt-6 p-5 text-sm">
