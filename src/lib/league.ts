@@ -63,7 +63,7 @@ export function useProfile(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name")
+        .select("id, display_name, avatar_url")
         .eq("id", userId!)
         .maybeSingle();
       if (error) throw error;
@@ -175,7 +175,9 @@ export function useProfiles() {
   return useQuery({
     queryKey: ["profiles"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, display_name");
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url");
       if (error) throw error;
       return data ?? [];
     },
