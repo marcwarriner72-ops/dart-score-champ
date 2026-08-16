@@ -6,7 +6,9 @@ import { Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import {
+  PRESET_TOURNAMENTS,
   formatDate,
+  matchFormatLabel,
   useAdminIds,
   useIsAdmin,
   useMatches,
@@ -26,6 +28,72 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DartLoader } from "@/components/DartLoader";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+/** Reusable "are you sure" wrapper for admin saves. */
+function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  description: string;
+  onConfirm: () => void;
+}) {
+  return (
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      <AlertDialogContent className="max-w-[20rem] rounded-xl">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="font-display uppercase">{title}</AlertDialogTitle>
+          <AlertDialogDescription>{description}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Back</AlertDialogCancel>
+          <AlertDialogAction onClick={onConfirm}>Confirm</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+
+/** Legs vs sets picker for a fixture. */
+function FormatPicker({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>Scored in</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id={id} className="h-11 w-full">
+          <SelectValue placeholder="Legs or sets" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="legs">Legs</SelectItem>
+          <SelectItem value="sets">Sets</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -174,6 +242,8 @@ function NewMatchForm() {
   const [playerB, setPlayerB] = useState("");
   const [tournament, setTournament] = useState("");
   const [startsAt, setStartsAt] = useState("");
+  const [format, setFormat] = useState("legs");
+  const [confirming, setConfirming] = useState(false);
 
   const create = useMutation({
     mutationFn: async () => {
@@ -184,6 +254,7 @@ function NewMatchForm() {
         player_b: playerB.trim(),
         tournament: tournament.trim() || null,
         starts_at: new Date(startsAt).toISOString(),
+        format,
       });
       if (error) throw error;
     },
@@ -193,7 +264,10 @@ function NewMatchForm() {
       setPlayerB("");
       setTournament("");
       setStartsAt("");
+      setFormat("legs");
+      setConfirming(false);
       queryClient.invalidateQueries({ queryKey: ["matches"] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not add match"),
   });
@@ -212,6 +286,7 @@ function NewMatchForm() {
         </div>
       </div>
       <TournamentPicker id="tour" value={tournament} onChange={setTournament} />
+      <FormatPicker id="format" value={format} onChange={setFormat} />
       <div className="space-y-1.5">
         <Label htmlFor="when">Starts at</Label>
         <Input
@@ -223,11 +298,24 @@ function NewMatchForm() {
       </div>
       <Button
         className="h-11 w-full font-bold uppercase"
-        onClick={() => create.mutate()}
+        onClick={() => {
+          if (!playerA.trim() || !playerB.trim()) return toast.error("Both players are required");
+          if (!startsAt) return toast.error("Pick a date and time");
+          setConfirming(true);
+        }}
         disabled={create.isPending}
       >
         Add match
       </Button>
+      <ConfirmDialog
+        open={confirming}
+        onOpenChange={setConfirming}
+        title="Add this fixture?"
+        description={`${playerA} vs ${playerB}${tournament ? ` · ${tournament}` : ""} · ${
+          format === "sets" ? "sets" : "legs"
+        } · ${startsAt ? new Date(startsAt).toLocaleString() : ""}`}
+        onConfirm={() => create.mutate()}
+      />
     </section>
   );
 }
@@ -241,6 +329,10 @@ function ResultForm({ match }: { match: Match }) {
   const [playerB, setPlayerB] = useState(match.player_b);
   const [tournament, setTournament] = useState(match.tournament ?? "");
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
+  const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
+  const [confirmResult, setConfirmResult] = useState(false);
+  const [confirmDetails, setConfirmDetails] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["matches"] });
@@ -260,6 +352,7 @@ function ResultForm({ match }: { match: Match }) {
       if (error) throw error;
     },
     onSuccess: () => {
+      setConfirmResult(false);
       toast.success("Result saved");
       invalidate();
     },
@@ -277,12 +370,14 @@ function ResultForm({ match }: { match: Match }) {
           player_b: playerB.trim(),
           tournament: tournament.trim() || null,
           starts_at: new Date(startsAt).toISOString(),
+          format,
         })
         .eq("id", match.id);
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Match updated");
+      setConfirmDetails(false);
       setEditing(false);
       invalidate();
     },
@@ -295,6 +390,7 @@ function ResultForm({ match }: { match: Match }) {
       if (error) throw error;
     },
     onSuccess: () => {
+      setConfirmDelete(false);
       toast.success("Match deleted");
       invalidate();
     },
@@ -310,7 +406,7 @@ function ResultForm({ match }: { match: Match }) {
           </p>
           <p className="text-xs text-muted-foreground">
             {formatDate(match.starts_at)}
-            {match.tournament ? ` · ${match.tournament}` : ""}
+            {match.tournament ? ` · ${match.tournament}` : ""} · {matchFormatLabel(match)}
           </p>
         </div>
         <div className="flex shrink-0 items-center">
@@ -327,7 +423,7 @@ function ResultForm({ match }: { match: Match }) {
             size="icon"
             className="text-destructive"
             aria-label="Delete match"
-            onClick={() => remove.mutate()}
+            onClick={() => setConfirmDelete(true)}
           >
             <Trash2 className="size-4" />
           </Button>
@@ -355,6 +451,7 @@ function ResultForm({ match }: { match: Match }) {
             </div>
           </div>
           <TournamentPicker id={`tour-${match.id}`} value={tournament} onChange={setTournament} />
+          <FormatPicker id={`format-${match.id}`} value={format} onChange={setFormat} />
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
             <Input
@@ -380,7 +477,7 @@ function ResultForm({ match }: { match: Match }) {
             </Button>
             <Button
               className="h-11 flex-1 font-bold uppercase"
-              onClick={() => saveDetails.mutate()}
+              onClick={() => setConfirmDetails(true)}
               disabled={saveDetails.isPending}
             >
               Save details
@@ -408,12 +505,38 @@ function ResultForm({ match }: { match: Match }) {
         />
         <Button
           className="ml-auto h-11 font-bold uppercase"
-          onClick={() => saveResult.mutate()}
+          onClick={() => setConfirmResult(true)}
           disabled={saveResult.isPending}
         >
           {match.status === "finished" ? "Update" : "Save result"}
         </Button>
       </div>
+
+      <ConfirmDialog
+        open={confirmResult}
+        onOpenChange={setConfirmResult}
+        title="Save this result?"
+        description={`${match.player_a} ${a || "?"}–${b || "?"} ${match.player_b} in ${matchFormatLabel(
+          match,
+        ).toLowerCase()}. This finishes the match and scores everyone's predictions.`}
+        onConfirm={() => saveResult.mutate()}
+      />
+      <ConfirmDialog
+        open={confirmDetails}
+        onOpenChange={setConfirmDetails}
+        title="Save these changes?"
+        description={`${playerA} vs ${playerB}${tournament ? ` · ${tournament}` : ""} · ${
+          format === "sets" ? "sets" : "legs"
+        } · ${startsAt ? new Date(startsAt).toLocaleString() : ""}`}
+        onConfirm={() => saveDetails.mutate()}
+      />
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete this fixture?"
+        description={`${match.player_a} vs ${match.player_b} and every prediction on it will be removed. This can't be undone.`}
+        onConfirm={() => remove.mutate()}
+      />
     </div>
   );
 }
@@ -431,7 +554,12 @@ function TournamentPicker({
   onChange: (v: string) => void;
 }) {
   const { data: tournaments = [] } = useTournaments();
-  const names = tournaments.map((t) => t.tournament).filter((t) => t !== "Other");
+  const names = Array.from(
+    new Set([
+      ...PRESET_TOURNAMENTS,
+      ...tournaments.map((t) => t.tournament).filter((t) => t !== "Other"),
+    ]),
+  );
   const known = value !== "" && names.includes(value);
   const [custom, setCustom] = useState(!known && value !== "");
 
