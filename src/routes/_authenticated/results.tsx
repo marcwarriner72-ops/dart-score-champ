@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
+import { Archive, Target } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
-import { DartLoader } from "@/components/DartLoader";
+import { EmptyState } from "@/components/EmptyState";
+import { MatchListSkeleton } from "@/components/Skeletons";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
   formatDate,
   hasStarted,
@@ -13,6 +16,9 @@ import {
   type Match,
   type Prediction,
 } from "@/lib/league";
+
+type Person = { name: string; avatar: string | null };
+
 
 export const Route = createFileRoute("/_authenticated/results")({
   component: ResultsPage,
