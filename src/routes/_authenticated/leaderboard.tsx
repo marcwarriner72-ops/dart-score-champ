@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Archive, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import {
   useLeaderboard,
+  useProfiles,
   useSession,
   useTournamentLeaderboard,
   useTournaments,
@@ -45,6 +47,11 @@ function LeaderboardPage() {
   const { data: allTime = [], isLoading: loadingAll } = useLeaderboard();
   const { data: perTournament = [], isLoading: loadingT } = useTournamentLeaderboard();
   const { data: tournaments = [] } = useTournaments();
+  const { data: profiles = [] } = useProfiles();
+  const avatarByUser = useMemo(
+    () => new Map(profiles.map((p) => [p.id, p.avatar_url])),
+    [profiles],
+  );
 
   const active = tournaments.filter((t) => t.is_active);
   const archived = tournaments.filter((t) => !t.is_active);
@@ -93,7 +100,7 @@ function LeaderboardPage() {
               return (
                 <li
                   key={row.user_id}
-                  className={`panel grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-3 ${
+                  className={`panel grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 p-3 ${
                     isMe ? "ring-1 ring-primary/60" : ""
                   }`}
                 >
@@ -108,6 +115,12 @@ function LeaderboardPage() {
                   >
                     {i + 1}
                   </span>
+                  <PlayerAvatar
+                    path={avatarByUser.get(row.user_id ?? "")}
+                    name={row.display_name}
+                    className="size-9"
+                  />
+
                   <div className="min-w-0">
                     <p className="truncate font-semibold">
                       {row.display_name}
