@@ -5,10 +5,19 @@ import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
-import { formatDate, useIsAdmin, useMatches, useSession, type Match } from "@/lib/league";
+import {
+  formatDate,
+  useAdminIds,
+  useIsAdmin,
+  useMatches,
+  useProfiles,
+  useSession,
+  type Match,
+} from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DartLoader } from "@/components/DartLoader";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -27,7 +36,7 @@ function AdminPage() {
   if (!isAdmin) {
     return (
       <AppShell title="Admin">
-        <p className="text-sm text-muted-foreground">Checking access…</p>
+        <DartLoader label="Checking access…" />
       </AppShell>
     );
   }
@@ -49,7 +58,9 @@ function AdminPage() {
         ))}
       </div>
 
-      <h2 className="mt-6 font-display text-xl font-bold uppercase">Finished</h2>
+      <AdminManager currentUserId={user?.id} />
+
+      <h2 className="mt-6 font-display text-xl font-bold uppercase">Archived (finished)</h2>
       <div className="mt-2 space-y-3">
         {finished.length === 0 && <p className="text-sm text-muted-foreground">No results yet.</p>}
         {finished.map((m) => (
@@ -57,6 +68,71 @@ function AdminPage() {
         ))}
       </div>
     </AppShell>
+  );
+}
+
+function AdminManager({ currentUserId }: { currentUserId: string | undefined }) {
+  const queryClient = useQueryClient();
+  const { data: profiles = [] } = useProfiles();
+  const { data: adminIds = [] } = useAdminIds();
+
+  const toggle = useMutation({
+    mutationFn: async ({ id, makeAdmin }: { id: string; makeAdmin: boolean }) => {
+      if (makeAdmin) {
+        const { error } = await supabase.from("user_roles").insert({ user_id: id, role: "admin" });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("user_roles")
+          .delete()
+          .eq("user_id", id)
+          .eq("role", "admin");
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      toast.success("Admins updated");
+      queryClient.invalidateQueries({ queryKey: ["admin-ids"] });
+      queryClient.invalidateQueries({ queryKey: ["is-admin"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update admins"),
+  });
+
+  return (
+    <section className="panel mt-6 space-y-2 p-4">
+      <h2 className="font-display text-xl font-bold uppercase">League admins</h2>
+      <p className="text-xs text-muted-foreground">
+        Promote friends to admin so they can add fixtures and enter results.
+      </p>
+      <ul className="space-y-2 pt-1">
+        {profiles.map((p) => {
+          const isAdmin = adminIds.includes(p.id);
+          const isMe = p.id === currentUserId;
+          return (
+            <li
+              key={p.id}
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2"
+            >
+              <span className="truncate text-sm font-semibold">
+                {p.display_name}
+                {isMe && <span className="ml-2 text-xs text-primary">you</span>}
+                {isAdmin && (
+                  <span className="ml-2 text-[10px] font-bold uppercase text-gold">Admin</span>
+                )}
+              </span>
+              <Button
+                variant={isAdmin ? "ghost" : "secondary"}
+                size="sm"
+                disabled={isMe || toggle.isPending}
+                onClick={() => toggle.mutate({ id: p.id, makeAdmin: !isAdmin })}
+              >
+                {isAdmin ? "Remove" : "Make admin"}
+              </Button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
