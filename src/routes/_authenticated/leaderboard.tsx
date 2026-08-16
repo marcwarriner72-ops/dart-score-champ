@@ -88,11 +88,13 @@ function LeaderboardPage() {
 
       <div className="mt-4">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading…</p>
+          <RowListSkeleton />
         ) : rows.length === 0 ? (
-          <div className="panel p-6 text-center text-sm text-muted-foreground">
-            No points scored here yet.
-          </div>
+          <EmptyState
+            icon={<Trophy className="size-6" />}
+            title="No points yet"
+            description="Points land here as soon as results are entered for this tournament."
+          />
         ) : (
           <ol className="space-y-2">
             {rows.map((row, i) => {
