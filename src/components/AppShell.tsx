@@ -4,6 +4,7 @@ import { LogOut, Target, Trophy, ListChecks, Shield, MessageCircle, Archive } fr
 import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useProfile, useSession } from "@/lib/league";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { Button } from "@/components/ui/button";
 
 export function AppShell({
@@ -30,7 +31,10 @@ export function AppShell({
 
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">
-      <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-md">
+      <header className="sticky top-0 z-20 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-md">
+        <Link to="/profile" aria-label="Your profile">
+          <PlayerAvatar path={profile?.avatar_url} name={profile?.display_name} className="size-10" />
+        </Link>
         <div className="min-w-0">
           <Link
             to="/profile"
