@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import {
@@ -21,7 +21,31 @@ import { DartLoader } from "@/components/DartLoader";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
+  head: () => ({
+    meta: [
+      { title: "Admin Fixtures | Darts Predictor League" },
+      {
+        name: "description",
+        content:
+          "Add darts fixtures, edit match details, enter final leg scores and manage league admins.",
+      },
+      { property: "og:title", content: "Admin Fixtures | Darts Predictor League" },
+      {
+        property: "og:description",
+        content: "Manage darts fixtures, results and league admins.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
+
+/** ISO string -> value usable by <input type="datetime-local"> in local time. */
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function AdminPage() {
   const navigate = useNavigate();
@@ -207,6 +231,11 @@ function ResultForm({ match }: { match: Match }) {
   const queryClient = useQueryClient();
   const [a, setA] = useState(match.score_a === null ? "" : String(match.score_a));
   const [b, setB] = useState(match.score_b === null ? "" : String(match.score_b));
+  const [editing, setEditing] = useState(false);
+  const [playerA, setPlayerA] = useState(match.player_a);
+  const [playerB, setPlayerB] = useState(match.player_b);
+  const [tournament, setTournament] = useState(match.tournament ?? "");
+  const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["matches"] });
@@ -230,6 +259,29 @@ function ResultForm({ match }: { match: Match }) {
       invalidate();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save result"),
+  });
+
+  const saveDetails = useMutation({
+    mutationFn: async () => {
+      if (!playerA.trim() || !playerB.trim()) throw new Error("Both players are required");
+      if (!startsAt) throw new Error("Pick a date and time");
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          player_a: playerA.trim(),
+          player_b: playerB.trim(),
+          tournament: tournament.trim() || null,
+          starts_at: new Date(startsAt).toISOString(),
+        })
+        .eq("id", match.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Match updated");
+      setEditing(false);
+      invalidate();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update match"),
   });
 
   const remove = useMutation({
@@ -256,16 +308,89 @@ function ResultForm({ match }: { match: Match }) {
             {match.tournament ? ` · ${match.tournament}` : ""}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 text-destructive"
-          aria-label="Delete match"
-          onClick={() => remove.mutate()}
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        <div className="flex shrink-0 items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Edit match details"
+            onClick={() => setEditing((v) => !v)}
+          >
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            aria-label="Delete match"
+            onClick={() => remove.mutate()}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
+
+      {editing && (
+        <div className="mt-3 space-y-3 rounded-lg bg-secondary/40 p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor={`pa-${match.id}`}>Player A</Label>
+              <Input
+                id={`pa-${match.id}`}
+                value={playerA}
+                onChange={(e) => setPlayerA(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`pb-${match.id}`}>Player B</Label>
+              <Input
+                id={`pb-${match.id}`}
+                value={playerB}
+                onChange={(e) => setPlayerB(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`tour-${match.id}`}>Tournament (optional)</Label>
+            <Input
+              id={`tour-${match.id}`}
+              value={tournament}
+              onChange={(e) => setTournament(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`when-${match.id}`}>Starts at</Label>
+            <Input
+              id={`when-${match.id}`}
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="h-11 flex-1 font-bold uppercase"
+              onClick={() => {
+                setPlayerA(match.player_a);
+                setPlayerB(match.player_b);
+                setTournament(match.tournament ?? "");
+                setStartsAt(toLocalInput(match.starts_at));
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-11 flex-1 font-bold uppercase"
+              onClick={() => saveDetails.mutate()}
+              disabled={saveDetails.isPending}
+            >
+              Save details
+            </Button>
+          </div>
+        </div>
+      )}
+
 
       <div className="mt-3 flex items-center gap-2">
         <Input
