@@ -3,6 +3,8 @@ import { useMemo, useState } from "react";
 import { Archive, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { EmptyState } from "@/components/EmptyState";
+import { RowListSkeleton } from "@/components/Skeletons";
 import {
   useLeaderboard,
   useProfiles,
