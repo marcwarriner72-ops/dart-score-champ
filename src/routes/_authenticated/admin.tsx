@@ -203,10 +203,7 @@ function NewMatchForm() {
           <Input id="pb" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="tour">Tournament (optional)</Label>
-        <Input id="tour" value={tournament} onChange={(e) => setTournament(e.target.value)} />
-      </div>
+      <TournamentPicker id="tour" value={tournament} onChange={setTournament} />
       <div className="space-y-1.5">
         <Label htmlFor="when">Starts at</Label>
         <Input
