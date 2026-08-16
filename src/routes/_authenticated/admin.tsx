@@ -349,14 +349,7 @@ function ResultForm({ match }: { match: Match }) {
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={`tour-${match.id}`}>Tournament (optional)</Label>
-            <Input
-              id={`tour-${match.id}`}
-              value={tournament}
-              onChange={(e) => setTournament(e.target.value)}
-            />
-          </div>
+          <TournamentPicker id={`tour-${match.id}`} value={tournament} onChange={setTournament} />
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
             <Input
