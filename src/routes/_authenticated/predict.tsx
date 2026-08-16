@@ -51,8 +51,15 @@ function PredictPage() {
   const { data: user } = useSession();
   const { data: matches = [], isLoading } = useMatches();
   const { data: predictions = [] } = useMyPredictions(user?.id);
+  const [tournament, setTournament] = useState<string>(ALL_TOURNAMENTS);
 
   const open = matches.filter((m) => m.status === "upcoming" && !hasStarted(m));
+  const tournaments = Array.from(new Set(open.map(matchTournament)));
+  const visible =
+    tournament === ALL_TOURNAMENTS ? open : open.filter((m) => matchTournament(m) === tournament);
+
+  const done = visible.filter((m) => predictions.some((p) => p.match_id === m.id)).length;
+  const next = visible[0];
 
   return (
     <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact score">
@@ -70,16 +77,58 @@ function PredictPage() {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {open.map((m) => (
-            <PredictionCard
-              key={m.id}
-              match={m}
-              userId={user?.id}
-              existing={predictions.find((p) => p.match_id === m.id)}
-            />
-          ))}
-        </div>
+        <>
+          <section className="panel p-4">
+            <p className="font-display text-xl font-bold uppercase">
+              {done === visible.length ? "You're all set" : `${visible.length - done} to call`}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {done === visible.length
+                ? "Every open fixture is predicted. You can still tweak them until throw-off."
+                : `${done} of ${visible.length} predicted so far.`}
+            </p>
+            {next && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Next up: {next.player_a} vs {next.player_b} · {formatDate(next.starts_at)}
+              </p>
+            )}
+            {tournaments.length > 1 && (
+              <div className="mt-3 space-y-1.5">
+                <Label htmlFor="tournament-filter" className="text-xs uppercase tracking-wide">
+                  Tournament
+                </Label>
+                <Select value={tournament} onValueChange={setTournament}>
+                  <SelectTrigger id="tournament-filter" className="h-11 w-full">
+                    <SelectValue placeholder="All tournaments" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ALL_TOURNAMENTS}>All tournaments</SelectItem>
+                    {tournaments.map((t) => (
+                      <SelectItem key={t} value={t}>
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </section>
+
+          <div className="mt-4 space-y-4">
+            {visible.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No open fixtures in this tournament.</p>
+            ) : (
+              visible.map((m) => (
+                <PredictionCard
+                  key={m.id}
+                  match={m}
+                  userId={user?.id}
+                  existing={predictions.find((p) => p.match_id === m.id)}
+                />
+              ))
+            )}
+          </div>
+        </>
       )}
     </AppShell>
   );
