@@ -308,16 +308,89 @@ function ResultForm({ match }: { match: Match }) {
             {match.tournament ? ` · ${match.tournament}` : ""}
           </p>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="shrink-0 text-destructive"
-          aria-label="Delete match"
-          onClick={() => remove.mutate()}
-        >
-          <Trash2 className="size-4" />
-        </Button>
+        <div className="flex shrink-0 items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Edit match details"
+            onClick={() => setEditing((v) => !v)}
+          >
+            <Pencil className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive"
+            aria-label="Delete match"
+            onClick={() => remove.mutate()}
+          >
+            <Trash2 className="size-4" />
+          </Button>
+        </div>
       </div>
+
+      {editing && (
+        <div className="mt-3 space-y-3 rounded-lg bg-secondary/40 p-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor={`pa-${match.id}`}>Player A</Label>
+              <Input
+                id={`pa-${match.id}`}
+                value={playerA}
+                onChange={(e) => setPlayerA(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`pb-${match.id}`}>Player B</Label>
+              <Input
+                id={`pb-${match.id}`}
+                value={playerB}
+                onChange={(e) => setPlayerB(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`tour-${match.id}`}>Tournament (optional)</Label>
+            <Input
+              id={`tour-${match.id}`}
+              value={tournament}
+              onChange={(e) => setTournament(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor={`when-${match.id}`}>Starts at</Label>
+            <Input
+              id={`when-${match.id}`}
+              type="datetime-local"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="h-11 flex-1 font-bold uppercase"
+              onClick={() => {
+                setPlayerA(match.player_a);
+                setPlayerB(match.player_b);
+                setTournament(match.tournament ?? "");
+                setStartsAt(toLocalInput(match.starts_at));
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-11 flex-1 font-bold uppercase"
+              onClick={() => saveDetails.mutate()}
+              disabled={saveDetails.isPending}
+            >
+              Save details
+            </Button>
+          </div>
+        </div>
+      )}
+
 
       <div className="mt-3 flex items-center gap-2">
         <Input
