@@ -100,7 +100,7 @@ function LeaderboardPage() {
               return (
                 <li
                   key={row.user_id}
-                  className={`panel grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 p-3 ${
+                  className={`panel grid grid-cols-[auto_auto_minmax(0,1fr)_auto] items-center gap-3 p-3 ${
                     isMe ? "ring-1 ring-primary/60" : ""
                   }`}
                 >
@@ -115,6 +115,12 @@ function LeaderboardPage() {
                   >
                     {i + 1}
                   </span>
+                  <PlayerAvatar
+                    path={avatarByUser.get(row.user_id ?? "")}
+                    name={row.display_name}
+                    className="size-9"
+                  />
+
                   <div className="min-w-0">
                     <p className="truncate font-semibold">
                       {row.display_name}
