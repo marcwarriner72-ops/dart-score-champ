@@ -19,6 +19,7 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedPredictRouteImport } from './routes/_authenticated/predict'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
 import { Route as AuthenticatedRulesRouteImport } from './routes/_authenticated/rules'
 
@@ -72,6 +73,11 @@ const AuthenticatedPredictRoute = AuthenticatedPredictRouteImport.update({
   path: '/predict',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedResultsRoute = AuthenticatedResultsRouteImport.update({
   id: '/results',
   path: '/results',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/predict': typeof AuthenticatedPredictRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/results': typeof AuthenticatedResultsRoute
   '/rules': typeof AuthenticatedRulesRoute
 }
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/predict': typeof AuthenticatedPredictRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/results': typeof AuthenticatedResultsRoute
   '/rules': typeof AuthenticatedRulesRoute
 }
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/predict': typeof AuthenticatedPredictRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/rules': typeof AuthenticatedRulesRoute
 }
@@ -136,6 +145,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/predict'
+    | '/profile'
     | '/results'
     | '/rules'
   fileRoutesByTo: FileRoutesByTo
@@ -149,6 +159,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/predict'
+    | '/profile'
     | '/results'
     | '/rules'
   id:
@@ -163,6 +174,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leaderboard'
     | '/_authenticated/predict'
+    | '/_authenticated/profile'
     | '/_authenticated/results'
     | '/_authenticated/rules'
   fileRoutesById: FileRoutesById
@@ -247,6 +259,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPredictRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/results': {
       id: '/_authenticated/results'
       path: '/results'
@@ -270,6 +289,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedPredictRoute: typeof AuthenticatedPredictRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
   AuthenticatedRulesRoute: typeof AuthenticatedRulesRoute
 }
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedPredictRoute: AuthenticatedPredictRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,
   AuthenticatedRulesRoute: AuthenticatedRulesRoute,
 }

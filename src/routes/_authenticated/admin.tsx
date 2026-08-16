@@ -12,11 +12,19 @@ import {
   useMatches,
   useProfiles,
   useSession,
+  useTournaments,
   type Match,
 } from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DartLoader } from "@/components/DartLoader";
 
 export const Route = createFileRoute("/_authenticated/admin")({
@@ -203,10 +211,7 @@ function NewMatchForm() {
           <Input id="pb" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="tour">Tournament (optional)</Label>
-        <Input id="tour" value={tournament} onChange={(e) => setTournament(e.target.value)} />
-      </div>
+      <TournamentPicker id="tour" value={tournament} onChange={setTournament} />
       <div className="space-y-1.5">
         <Label htmlFor="when">Starts at</Label>
         <Input
@@ -349,14 +354,7 @@ function ResultForm({ match }: { match: Match }) {
               />
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor={`tour-${match.id}`}>Tournament (optional)</Label>
-            <Input
-              id={`tour-${match.id}`}
-              value={tournament}
-              onChange={(e) => setTournament(e.target.value)}
-            />
-          </div>
+          <TournamentPicker id={`tour-${match.id}`} value={tournament} onChange={setTournament} />
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
             <Input
@@ -416,6 +414,64 @@ function ResultForm({ match }: { match: Match }) {
           {match.status === "finished" ? "Update" : "Save result"}
         </Button>
       </div>
+    </div>
+  );
+}
+
+const NEW_TOURNAMENT = "__new__";
+
+/** Pick an existing tournament from a dropdown, or type a brand new one. */
+function TournamentPicker({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const { data: tournaments = [] } = useTournaments();
+  const names = tournaments.map((t) => t.tournament).filter((t) => t !== "Other");
+  const known = value !== "" && names.includes(value);
+  const [custom, setCustom] = useState(!known && value !== "");
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>Tournament</Label>
+      <Select
+        value={custom ? NEW_TOURNAMENT : known ? value : ""}
+        onValueChange={(v) => {
+          if (v === NEW_TOURNAMENT) {
+            setCustom(true);
+            onChange("");
+          } else {
+            setCustom(false);
+            onChange(v);
+          }
+        }}
+      >
+        <SelectTrigger id={id} className="h-11 w-full">
+          <SelectValue placeholder="Select a tournament" />
+        </SelectTrigger>
+        <SelectContent>
+          {names.map((n) => (
+            <SelectItem key={n} value={n}>
+              {n}
+            </SelectItem>
+          ))}
+          <SelectItem value={NEW_TOURNAMENT}>+ New tournament…</SelectItem>
+        </SelectContent>
+      </Select>
+      {custom && (
+        <Input
+          value={value}
+          placeholder="Tournament name"
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+      <p className="text-xs text-muted-foreground">
+        The league table resets for each tournament and past ones move to the archive.
+      </p>
     </div>
   );
 }

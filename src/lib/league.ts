@@ -175,3 +175,48 @@ export function useAdminIds() {
     },
   });
 }
+
+export type TournamentRow = {
+  tournament: string;
+  match_count: number;
+  finished_count: number;
+  first_match_at: string;
+  last_match_at: string;
+  is_active: boolean;
+};
+
+export type TournamentStanding = LeaderboardRow & { tournament: string };
+
+/** All tournaments derived from fixtures, most recent first. */
+export function useTournaments() {
+  return useQuery({
+    queryKey: ["tournaments"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournaments")
+        .select("*")
+        .order("last_match_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as TournamentRow[];
+    },
+  });
+}
+
+/** Standings split per tournament — the table resets for every new tournament. */
+export function useTournamentLeaderboard() {
+  return useQuery({
+    queryKey: ["tournament-leaderboard"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("tournament_leaderboard")
+        .select("*")
+        .order("points", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as TournamentStanding[];
+    },
+  });
+}
+
+export function matchTournament(m: Match) {
+  return m.tournament || "Other";
+}

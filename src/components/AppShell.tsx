@@ -32,9 +32,12 @@ export function AppShell({
     <div className="mx-auto flex min-h-screen w-full max-w-lg flex-col">
       <header className="sticky top-0 z-20 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-md">
         <div className="min-w-0">
-          <p className="truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+          <Link
+            to="/profile"
+            className="block truncate text-[11px] font-semibold uppercase tracking-[0.18em] text-primary underline-offset-2 hover:underline"
+          >
             {profile?.display_name ? `Hi, ${profile.display_name}` : "Darts Predictor League"}
-          </p>
+          </Link>
           <h1 className="truncate font-display text-2xl font-bold uppercase">{title}</h1>
           {subtitle ? (
             <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
