@@ -22,9 +22,9 @@ function RulesPage() {
 
       <div className="panel mt-4 space-y-2 p-4 text-sm text-muted-foreground">
         <p className="font-display text-lg font-bold uppercase text-foreground">The small print</p>
-        <p>Predictions can be edited any time until the admin marks a match as finished.</p>
-        <p>Other players' picks stay hidden until the result is in.</p>
-        <p>The leaderboard updates the moment a final score is entered.</p>
+        <p>Predictions can be added or edited any time until the match start time.</p>
+        <p>Other players' picks stay hidden until throw-off, then everyone's are revealed.</p>
+        <p>The leaderboard updates the moment a final score is entered, and completed matches move to the Results archive.</p>
       </div>
     </AppShell>
   );
