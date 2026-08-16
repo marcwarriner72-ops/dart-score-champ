@@ -17,6 +17,7 @@ export type Database = {
       matches: {
         Row: {
           created_at: string
+          format: string
           id: string
           player_a: string
           player_b: string
@@ -28,6 +29,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          format?: string
           id?: string
           player_a: string
           player_b: string
@@ -39,6 +41,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          format?: string
           id?: string
           player_a?: string
           player_b?: string
