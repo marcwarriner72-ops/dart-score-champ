@@ -10,7 +10,24 @@ export type Match = {
   status: string;
   score_a: number | null;
   score_b: number | null;
+  format?: string | null;
 };
+
+/** Preset PDC World Series events offered in the admin tournament dropdown. */
+export const PRESET_TOURNAMENTS = [
+  "Bahrain Darts Masters",
+  "Saudi Arabia Darts Masters",
+  "Nordic Darts Masters",
+  "US Darts Masters",
+  "New Zealand Darts Masters",
+  "Australian Darts Masters",
+  "World Series of Darts Finals",
+];
+
+/** "Legs" or "Sets" — how this fixture is scored. */
+export function matchFormatLabel(m: Pick<Match, "format">) {
+  return m.format === "sets" ? "Sets" : "Legs";
+}
 
 export type Prediction = {
   id: string;
