@@ -231,6 +231,11 @@ function ResultForm({ match }: { match: Match }) {
   const queryClient = useQueryClient();
   const [a, setA] = useState(match.score_a === null ? "" : String(match.score_a));
   const [b, setB] = useState(match.score_b === null ? "" : String(match.score_b));
+  const [editing, setEditing] = useState(false);
+  const [playerA, setPlayerA] = useState(match.player_a);
+  const [playerB, setPlayerB] = useState(match.player_b);
+  const [tournament, setTournament] = useState(match.tournament ?? "");
+  const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["matches"] });
@@ -254,6 +259,29 @@ function ResultForm({ match }: { match: Match }) {
       invalidate();
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save result"),
+  });
+
+  const saveDetails = useMutation({
+    mutationFn: async () => {
+      if (!playerA.trim() || !playerB.trim()) throw new Error("Both players are required");
+      if (!startsAt) throw new Error("Pick a date and time");
+      const { error } = await supabase
+        .from("matches")
+        .update({
+          player_a: playerA.trim(),
+          player_b: playerB.trim(),
+          tournament: tournament.trim() || null,
+          starts_at: new Date(startsAt).toISOString(),
+        })
+        .eq("id", match.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Match updated");
+      setEditing(false);
+      invalidate();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update match"),
   });
 
   const remove = useMutation({
