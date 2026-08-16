@@ -8,6 +8,7 @@ import { DartLoader } from "@/components/DartLoader";
 import {
   formatDate,
   hasStarted,
+  matchFormatLabel,
   matchTournament,
   useMatches,
   useMyPredictions,
@@ -247,7 +248,9 @@ function PredictionCard({
           aria-label={`Legs for ${match.player_a}`}
           placeholder="0"
         />
-        <span className="font-display text-2xl text-muted-foreground">legs</span>
+        <span className="font-display text-2xl text-muted-foreground">
+          {matchFormatLabel(match).toLowerCase()}
+        </span>
         <Input
           inputMode="numeric"
           className="h-12 w-16 text-center font-display text-2xl"
@@ -258,8 +261,12 @@ function PredictionCard({
         />
       </div>
 
+      <p className="mt-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        This match is played in {matchFormatLabel(match).toLowerCase()}
+      </p>
+
       <Button
-        className="mt-4 h-11 w-full font-bold uppercase"
+        className="mt-3 h-11 w-full font-bold uppercase"
         onClick={openConfirm}
         disabled={save.isPending}
       >
@@ -271,8 +278,8 @@ function PredictionCard({
           <AlertDialogHeader>
             <AlertDialogTitle className="font-display uppercase">Confirm prediction</AlertDialogTitle>
             <AlertDialogDescription>
-              {winnerName} to win {scoreA}–{scoreB} in {match.player_a} vs {match.player_b}. You can
-              still edit this until the match starts.
+              {winnerName} to win {scoreA}–{scoreB} in {matchFormatLabel(match).toLowerCase()} (
+              {match.player_a} vs {match.player_b}). You can still edit this until the match starts.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

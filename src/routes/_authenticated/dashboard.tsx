@@ -10,9 +10,27 @@ import {
   useSession,
 } from "@/lib/league";
 import { Button } from "@/components/ui/button";
+import { NextFixtureCountdown } from "@/components/NextFixtureCountdown";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
+  head: () => ({
+    meta: [
+      { title: "Your Dashboard | Darts Predictor League" },
+      {
+        name: "description",
+        content:
+          "See your points, league rank, open predictions and a live countdown to the next darts fixture.",
+      },
+      { property: "og:title", content: "Your Dashboard | Darts Predictor League" },
+      {
+        property: "og:description",
+        content: "Points, rank and a countdown to the next darts fixture.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function Dashboard() {
@@ -33,6 +51,10 @@ function Dashboard() {
         <Stat label="Points" value={me?.points ?? 0} highlight />
         <Stat label="Rank" value={rank ? `#${rank}` : "—"} />
         <Stat label="Bullseyes" value={me?.exact_hits ?? 0} />
+      </div>
+
+      <div className="mt-4">
+        <NextFixtureCountdown matches={matches} />
       </div>
 
       <section className="panel mt-4 p-4">
