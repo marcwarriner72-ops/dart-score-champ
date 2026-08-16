@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Send } from "lucide-react";
+import { MessageCircle, Send } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { EmptyState } from "@/components/EmptyState";
+import { ChatSkeleton } from "@/components/Skeletons";
+import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { supabase } from "@/integrations/supabase/client";
-import { useSession } from "@/lib/league";
+import { useProfiles, useSession } from "@/lib/league";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
@@ -44,7 +47,7 @@ function ChatPage() {
   const [sending, setSending] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  const { data: messages = [] } = useQuery({
+  const { data: messages = [], isLoading } = useQuery({
     queryKey: ["messages"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -57,18 +60,12 @@ function ChatPage() {
     },
   });
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, display_name");
-      if (error) throw error;
-      return data;
-    },
-  });
+  const { data: profiles = [] } = useProfiles();
 
-  const names = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const p of profiles) map.set(p.id, p.display_name);
+  const people = useMemo(() => {
+    const map = new Map<string, { name: string; avatar: string | null }>();
+    for (const p of profiles)
+      map.set(p.id, { name: p.display_name, avatar: p.avatar_url ?? null });
     return map;
   }, [profiles]);
 
@@ -118,7 +115,7 @@ function ChatPage() {
           href="https://www.paddypower.com/darts"
           target="_blank"
           rel="noopener noreferrer"
-          className="ml-auto rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+          className="ml-auto rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-primary underline-offset-2 transition-transform hover:underline active:scale-95"
         >
           Paddy Power
         </a>
@@ -126,42 +123,54 @@ function ChatPage() {
           href="https://www.pdc.tv"
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-primary underline-offset-2 hover:underline"
+          className="rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-primary underline-offset-2 transition-transform hover:underline active:scale-95"
         >
           pdc.tv
         </a>
       </div>
 
       <div className="flex flex-col gap-3 pb-20">
-        {messages.length === 0 ? (
-          <div className="panel p-6 text-center text-sm text-muted-foreground">
-            No messages yet — start the banter.
-          </div>
+        {isLoading ? (
+          <ChatSkeleton />
+        ) : messages.length === 0 ? (
+          <EmptyState
+            icon={<MessageCircle className="size-6" />}
+            title="No messages yet"
+            description="Be the first to start the banter before the next throw-off."
+          />
         ) : (
           messages.map((m) => {
             const mine = m.user_id === user?.id;
+            const person = people.get(m.user_id);
             return (
               <div
                 key={m.id}
-                className={`flex flex-col ${mine ? "items-end" : "items-start"}`}
+                className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}
               >
-                <span className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {mine ? "You" : (names.get(m.user_id) ?? "Player")}
-                  {" · "}
-                  {new Date(m.created_at).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <p
-                  className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm ${
-                    mine
-                      ? "rounded-br-sm bg-primary text-primary-foreground"
-                      : "rounded-bl-sm bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  {m.content}
-                </p>
+                <PlayerAvatar
+                  path={person?.avatar}
+                  name={person?.name}
+                  className="size-8 text-[10px]"
+                />
+                <div className={`flex min-w-0 flex-col ${mine ? "items-end" : "items-start"}`}>
+                  <span className="px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {mine ? "You" : (person?.name ?? "Player")}
+                    {" · "}
+                    {new Date(m.created_at).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <p
+                    className={`max-w-[16rem] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm ${
+                      mine
+                        ? "rounded-br-sm bg-primary text-primary-foreground"
+                        : "rounded-bl-sm bg-secondary text-secondary-foreground"
+                    }`}
+                  >
+                    {m.content}
+                  </p>
+                </div>
               </div>
             );
           })
@@ -180,7 +189,13 @@ function ChatPage() {
           maxLength={1000}
           aria-label="Message"
         />
-        <Button type="submit" size="icon" disabled={sending || !draft.trim()} aria-label="Send">
+        <Button
+          type="submit"
+          size="icon"
+          className="transition-transform active:scale-95"
+          disabled={sending || !draft.trim()}
+          aria-label="Send"
+        >
           <Send className="size-4" />
         </Button>
       </form>
