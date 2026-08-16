@@ -299,8 +299,14 @@ function NewMatchForm() {
       <Button
         className="h-11 w-full font-bold uppercase"
         onClick={() => {
-          if (!playerA.trim() || !playerB.trim()) return toast.error("Both players are required");
-          if (!startsAt) return toast.error("Pick a date and time");
+          if (!playerA.trim() || !playerB.trim()) {
+            toast.error("Both players are required");
+            return;
+          }
+          if (!startsAt) {
+            toast.error("Pick a date and time");
+            return;
+          }
           setConfirming(true);
         }}
         disabled={create.isPending}
