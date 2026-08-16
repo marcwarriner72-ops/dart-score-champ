@@ -152,13 +152,16 @@ function MatchCard({
         {rows.length === 0 ? (
           <li className="text-sm text-muted-foreground">No predictions were made.</li>
         ) : (
-          rows.map(({ p, pts }) => (
+          rows.map(({ p, pts }) => {
+            const person = people.get(p.user_id);
+            return (
             <li
               key={p.id}
-              className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2 text-sm"
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 rounded-lg bg-secondary/50 px-3 py-2 text-sm"
             >
+              <PlayerAvatar path={person?.avatar} name={person?.name} className="size-8 text-[10px]" />
               <span className="truncate font-semibold">
-                {p.user_id === meId ? "You" : (names.get(p.user_id) ?? "Player")}
+                {p.user_id === meId ? "You" : (person?.name ?? "Player")}
               </span>
               <span className="shrink-0 text-muted-foreground">
                 {p.predicted_winner === "a" ? match.player_a : match.player_b} · {p.score_a}–
