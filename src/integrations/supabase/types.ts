@@ -160,6 +160,28 @@ export type Database = {
         }
         Relationships: []
       }
+      tournament_leaderboard: {
+        Row: {
+          display_name: string | null
+          exact_hits: number | null
+          points: number | null
+          predictions_made: number | null
+          tournament: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
+      tournaments: {
+        Row: {
+          finished_count: number | null
+          first_match_at: string | null
+          is_active: boolean | null
+          last_match_at: string | null
+          match_count: number | null
+          tournament: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
