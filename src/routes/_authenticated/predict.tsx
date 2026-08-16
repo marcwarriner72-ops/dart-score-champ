@@ -4,7 +4,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
-import { DartLoader } from "@/components/DartLoader";
+import { MatchListSkeleton } from "@/components/Skeletons";
+import { EmptyState } from "@/components/EmptyState";
+import { CalendarCheck } from "lucide-react";
 import {
   formatDate,
   hasStarted,
@@ -76,18 +78,21 @@ function PredictPage() {
   return (
     <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact score">
       {isLoading ? (
-        <DartLoader label="Loading fixtures…" />
+        <MatchListSkeleton />
       ) : open.length === 0 ? (
-        <div className="panel p-6 text-center">
-          <p className="font-display text-xl uppercase">No open fixtures</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Everything has started or finished. See how everyone called it in the{" "}
-            <Link to="/results" className="text-primary underline">
-              results
+        <EmptyState
+          icon={<CalendarCheck className="size-6" />}
+          title="No open fixtures"
+          description="Everything has started or finished — see how everyone called it."
+          action={
+            <Link
+              to="/results"
+              className="inline-flex h-11 items-center rounded-lg bg-primary px-4 text-sm font-bold uppercase text-primary-foreground transition-transform active:scale-95"
+            >
+              View results
             </Link>
-            .
-          </p>
-        </div>
+          }
+        />
       ) : (
         <>
           <section className="panel p-4">
@@ -128,7 +133,10 @@ function PredictPage() {
 
           <div className="mt-4 space-y-4">
             {visible.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No open fixtures in this tournament.</p>
+              <EmptyState
+                title="Nothing here"
+                description="No open fixtures in this tournament yet."
+              />
             ) : (
               visible.map((m) => (
                 <PredictionCard
@@ -266,7 +274,7 @@ function PredictionCard({
       </p>
 
       <Button
-        className="mt-3 h-11 w-full font-bold uppercase"
+        className="mt-3 h-11 w-full font-bold uppercase transition-transform active:scale-[0.98]"
         onClick={openConfirm}
         disabled={save.isPending}
       >
@@ -305,7 +313,7 @@ function WinnerButton({
     <button
       type="button"
       onClick={onClick}
-      className={`truncate rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors ${
+      className={`truncate rounded-lg border px-3 py-3 text-sm font-semibold transition-all active:scale-95 ${
         active
           ? "border-primary bg-primary/20 text-primary"
           : "border-border bg-secondary/40 text-muted-foreground"
