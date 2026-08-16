@@ -24,7 +24,7 @@ export function PlayerAvatar({
   className,
 }: {
   path: string | null | undefined;
-  name?: string | null;
+  name?: string | null | undefined;
   className?: string;
 }) {
   const { data: url } = useAvatarUrl(path);

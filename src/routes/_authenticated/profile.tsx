@@ -50,6 +50,7 @@ function ProfilePage() {
   const { data: user } = useSession();
   const { data: profile } = useProfile(user?.id);
   const [name, setName] = useState("");
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile?.display_name) setName(profile.display_name);
