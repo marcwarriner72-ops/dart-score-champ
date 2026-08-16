@@ -118,12 +118,12 @@ function ResultsPage() {
 function MatchCard({
   match,
   predictions,
-  names,
+  people,
   meId,
 }: {
   match: Match;
   predictions: Prediction[];
-  names: Map<string, string>;
+  people: Map<string, Person>;
   meId: string | undefined;
 }) {
   const finished = match.status === "finished";
