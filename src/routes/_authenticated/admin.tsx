@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import {
@@ -21,7 +21,31 @@ import { DartLoader } from "@/components/DartLoader";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
+  head: () => ({
+    meta: [
+      { title: "Admin Fixtures | Darts Predictor League" },
+      {
+        name: "description",
+        content:
+          "Add darts fixtures, edit match details, enter final leg scores and manage league admins.",
+      },
+      { property: "og:title", content: "Admin Fixtures | Darts Predictor League" },
+      {
+        property: "og:description",
+        content: "Manage darts fixtures, results and league admins.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
+
+/** ISO string -> value usable by <input type="datetime-local"> in local time. */
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 function AdminPage() {
   const navigate = useNavigate();
