@@ -47,6 +47,11 @@ function LeaderboardPage() {
   const { data: allTime = [], isLoading: loadingAll } = useLeaderboard();
   const { data: perTournament = [], isLoading: loadingT } = useTournamentLeaderboard();
   const { data: tournaments = [] } = useTournaments();
+  const { data: profiles = [] } = useProfiles();
+  const avatarByUser = useMemo(
+    () => new Map(profiles.map((p) => [p.id, p.avatar_url])),
+    [profiles],
+  );
 
   const active = tournaments.filter((t) => t.is_active);
   const archived = tournaments.filter((t) => !t.is_active);
