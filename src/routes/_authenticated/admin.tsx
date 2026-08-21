@@ -148,35 +148,71 @@ function AdminPage() {
     );
   }
 
-  const upcoming = matches.filter((m) => m.status === "upcoming");
-  const finished = matches.filter((m) => m.status === "finished");
+  const active = matches.filter((m) => m.status === "upcoming");
+  const finished = matches
+    .filter((m) => m.status === "finished")
+    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+
+  /** Archive is grouped by tournament, newest event first. */
+  const archiveGroups: { name: string; matches: Match[] }[] = [];
+  for (const m of finished) {
+    const name = m.tournament?.trim() || "Other fixtures";
+    const group = archiveGroups.find((g) => g.name === name);
+    if (group) group.matches.push(m);
+    else archiveGroups.push({ name, matches: [m] });
+  }
 
   return (
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
 
-      <h2 className="mt-6 font-display text-xl font-bold uppercase">Upcoming</h2>
+      <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
+      <p className="text-xs text-muted-foreground">
+        Saving a result moves the fixture straight into the archive below.
+      </p>
       <div className="mt-2 space-y-3">
-        {upcoming.length === 0 && (
-          <p className="text-sm text-muted-foreground">No upcoming matches.</p>
+        {active.length === 0 && (
+          <p className="text-sm text-muted-foreground">No active fixtures.</p>
         )}
-        {upcoming.map((m) => (
+        {active.map((m) => (
           <ResultForm key={m.id} match={m} />
         ))}
       </div>
 
       <AdminManager currentUserId={user?.id} />
 
-      <h2 className="mt-6 font-display text-xl font-bold uppercase">Archived (finished)</h2>
-      <div className="mt-2 space-y-3">
-        {finished.length === 0 && <p className="text-sm text-muted-foreground">No results yet.</p>}
-        {finished.map((m) => (
-          <ResultForm key={m.id} match={m} />
-        ))}
-      </div>
+      <Collapsible className="mt-6">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-xl bg-secondary/50 px-4 py-3 text-left transition active:scale-[0.99]">
+          <span className="font-display text-xl font-bold uppercase">Archive</span>
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="rounded-full bg-background/70 px-2 py-0.5 text-xs font-semibold">
+              {finished.length}
+            </span>
+            <ChevronDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+          </span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3 space-y-5">
+          {finished.length === 0 && (
+            <p className="text-sm text-muted-foreground">No completed fixtures yet.</p>
+          )}
+          {archiveGroups.map((g) => (
+            <div key={g.name} className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {g.name} · {g.matches.length}
+              </h3>
+              {g.matches.map((m) => (
+                <div key={m.id} className="opacity-80 transition hover:opacity-100">
+                  <ResultForm match={m} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
     </AppShell>
   );
 }
+
 
 function AdminManager({ currentUserId }: { currentUserId: string | undefined }) {
   const queryClient = useQueryClient();
