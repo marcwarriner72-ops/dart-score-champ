@@ -141,3 +141,85 @@
 .dart-fly {
   animation: dart-fly 1.4s cubic-bezier(0.3, 0.7, 0.3, 1) infinite;
 }
+
+@keyframes dart-throw {
+  0% {
+    left: -15%;
+    opacity: 0;
+    transform: translateY(-50%) rotate(-14deg) scale(0.7);
+  }
+  15% {
+    opacity: 1;
+  }
+  62% {
+    left: calc(50% - 1.1rem);
+    opacity: 1;
+    transform: translateY(-50%) rotate(0deg) scale(1.15);
+  }
+  72% {
+    left: calc(50% - 1.1rem);
+    transform: translateY(-50%) rotate(0deg) scale(0.95);
+  }
+  100% {
+    left: calc(50% - 1.1rem);
+    opacity: 0;
+    transform: translateY(-50%) rotate(0deg) scale(1);
+  }
+}
+
+@keyframes dart-board-pop {
+  0%,
+  55% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.7);
+  }
+  62% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+  74% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.05);
+  }
+}
+
+@keyframes dart-throw-label {
+  0%,
+  60% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+}
+
+.dart-throw {
+  animation: dart-throw 1.2s cubic-bezier(0.25, 0.8, 0.3, 1) 1 both;
+}
+
+.dart-board-pop {
+  animation: dart-board-pop 1.2s ease-out 1 both;
+}
+
+.dart-throw-label {
+  animation: dart-throw-label 1.2s ease-out 1 both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dart-throw,
+  .dart-board-pop,
+  .dart-throw-label,
+  .dart-fly {
+    animation: none;
+  }
+}

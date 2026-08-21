@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { MatchListSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
+import { throwDart } from "@/components/DartThrow";
 import { CalendarCheck } from "lucide-react";
 import {
   formatDate,
@@ -186,6 +187,7 @@ function PredictionCard({
       if (error) throw error;
     },
     onSuccess: () => {
+      throwDart("Prediction saved");
       toast.success("Prediction confirmed");
       queryClient.invalidateQueries({ queryKey: ["my-predictions"] });
       queryClient.invalidateQueries({ queryKey: ["all-predictions"] });
