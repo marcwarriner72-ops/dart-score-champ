@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Lock, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Lock, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import {
@@ -29,6 +29,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DartLoader } from "@/components/DartLoader";
+import { throwDart } from "@/components/DartThrow";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -362,6 +368,7 @@ function ResultForm({ match }: { match: Match }) {
     },
     onSuccess: () => {
       setConfirmResult(false);
+      throwDart("Result saved");
       toast.success("Result saved");
       invalidate();
     },
