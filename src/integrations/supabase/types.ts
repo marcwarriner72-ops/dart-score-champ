@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       matches: {
         Row: {
+          country: string | null
           created_at: string
           format: string
           id: string
@@ -28,6 +29,7 @@ export type Database = {
           tournament: string | null
         }
         Insert: {
+          country?: string | null
           created_at?: string
           format?: string
           id?: string
@@ -40,6 +42,7 @@ export type Database = {
           tournament?: string | null
         }
         Update: {
+          country?: string | null
           created_at?: string
           format?: string
           id?: string
@@ -118,21 +121,36 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string
+          favourite_player: string | null
+          highest_checkout: number | null
+          hometown: string | null
           id: string
+          walk_on_song: string | null
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name: string
+          favourite_player?: string | null
+          highest_checkout?: number | null
+          hometown?: string | null
           id: string
+          walk_on_song?: string | null
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string
+          favourite_player?: string | null
+          highest_checkout?: number | null
+          hometown?: string | null
           id?: string
+          walk_on_song?: string | null
         }
         Relationships: []
       }
