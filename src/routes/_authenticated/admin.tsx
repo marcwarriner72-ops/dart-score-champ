@@ -481,6 +481,7 @@ function ResultForm({ match }: { match: Match }) {
           tournament: tournament.trim() || null,
           starts_at: new Date(startsAt).toISOString(),
           format,
+          country,
         })
         .eq("id", match.id);
       if (error) throw error;
@@ -493,6 +494,26 @@ function ResultForm({ match }: { match: Match }) {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update match"),
   });
+
+  /** Pull a finished fixture back out of the archive so the result can be redone. */
+  const reopen = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("matches")
+        .update({ status: "upcoming", score_a: null, score_b: null })
+        .eq("id", match.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setConfirmReopen(false);
+      setA("");
+      setB("");
+      toast.success("Fixture re-opened");
+      invalidate();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not re-open fixture"),
+  });
+
 
   const remove = useMutation({
     mutationFn: async () => {
