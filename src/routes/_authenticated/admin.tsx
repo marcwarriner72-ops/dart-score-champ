@@ -2,12 +2,15 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Lock, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, Lock, Pencil, RotateCcw, Trash2, Unlock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { CountryFlag } from "@/components/CountryFlag";
 import {
+  COUNTRIES,
   PRESET_TOURNAMENTS,
   formatDate,
+  guessCountry,
   hasStarted,
   matchFormatLabel,
   useAdminIds,
@@ -18,6 +21,7 @@ import {
   useTournaments,
   type Match,
 } from "@/lib/league";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -101,6 +105,40 @@ function FormatPicker({
     </div>
   );
 }
+
+/** Host country for the competition — drives the flag shown around the app. */
+function CountryPicker({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>Host country</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id={id} className="h-11 w-full">
+          <SelectValue placeholder="Select a country" />
+        </SelectTrigger>
+        <SelectContent>
+          {COUNTRIES.map((c) => (
+            <SelectItem key={c.code} value={c.code}>
+              <span className="mr-2">
+                <CountryFlag code={c.code} />
+              </span>
+              {c.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+
 
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
@@ -286,7 +324,15 @@ function NewMatchForm() {
   const [tournament, setTournament] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [format, setFormat] = useState("legs");
+  const [country, setCountry] = useState("GB");
   const [confirming, setConfirming] = useState(false);
+
+  /** Picking a known competition pre-fills its host country. */
+  function pickTournament(v: string) {
+    setTournament(v);
+    const guess = guessCountry(v);
+    if (guess) setCountry(guess);
+  }
 
   const create = useMutation({
     mutationFn: async () => {
@@ -298,6 +344,7 @@ function NewMatchForm() {
         tournament: tournament.trim() || null,
         starts_at: new Date(startsAt).toISOString(),
         format,
+        country,
       });
       if (error) throw error;
     },
@@ -312,6 +359,7 @@ function NewMatchForm() {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
     },
+
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not add match"),
   });
 
@@ -328,8 +376,10 @@ function NewMatchForm() {
           <Input id="pb" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
         </div>
       </div>
-      <TournamentPicker id="tour" value={tournament} onChange={setTournament} />
+      <TournamentPicker id="tour" value={tournament} onChange={pickTournament} />
+      <CountryPicker id="country" value={country} onChange={setCountry} />
       <FormatPicker id="format" value={format} onChange={setFormat} />
+
       <div className="space-y-1.5">
         <Label htmlFor="when">Starts at</Label>
         <Input
@@ -379,16 +429,24 @@ function ResultForm({ match }: { match: Match }) {
   const [tournament, setTournament] = useState(match.tournament ?? "");
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
+  const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  /** Once the throw-off time passes the fixture details are locked (enforced in the database too). */
-  const locked = hasStarted(match);
+  const [confirmOverride, setConfirmOverride] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
+  /** Started fixtures are locked for everyone, but an admin can override to fix an obvious error. */
+  const started = hasStarted(match);
+  const [override, setOverride] = useState(false);
+  const locked = started && !override;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["matches"] });
     queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    queryClient.invalidateQueries({ queryKey: ["tournament-leaderboard"] });
+    queryClient.invalidateQueries({ queryKey: ["tournaments"] });
   };
+
 
   const saveResult = useMutation({
     mutationFn: async () => {
@@ -423,6 +481,7 @@ function ResultForm({ match }: { match: Match }) {
           tournament: tournament.trim() || null,
           starts_at: new Date(startsAt).toISOString(),
           format,
+          country,
         })
         .eq("id", match.id);
       if (error) throw error;
@@ -435,6 +494,26 @@ function ResultForm({ match }: { match: Match }) {
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update match"),
   });
+
+  /** Pull a finished fixture back out of the archive so the result can be redone. */
+  const reopen = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("matches")
+        .update({ status: "upcoming", score_a: null, score_b: null })
+        .eq("id", match.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setConfirmReopen(false);
+      setA("");
+      setB("");
+      toast.success("Fixture re-opened");
+      invalidate();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not re-open fixture"),
+  });
+
 
   const remove = useMutation({
     mutationFn: async () => {
@@ -456,18 +535,40 @@ function ResultForm({ match }: { match: Match }) {
           <p className="truncate font-display text-lg font-bold uppercase">
             {match.player_a} <span className="text-accent">vs</span> {match.player_b}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {formatDate(match.starts_at)}
-            {match.tournament ? ` · ${match.tournament}` : ""} · {matchFormatLabel(match)}
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
+            <span className="truncate">
+              {formatDate(match.starts_at)}
+              {match.tournament ? ` · ${match.tournament}` : ""} · {matchFormatLabel(match)}
+            </span>
           </p>
         </div>
         <div className="flex shrink-0 items-center">
           {locked ? (
-            <span className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setConfirmOverride(true)}
+              className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
+            >
               <Lock className="size-3" /> Locked
-            </span>
+            </button>
           ) : (
             <>
+              {started && (
+                <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
+                  <Unlock className="size-3" /> Override
+                </span>
+              )}
+              {match.status === "finished" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Re-open fixture"
+                  onClick={() => setConfirmReopen(true)}
+                >
+                  <RotateCcw className="size-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -511,7 +612,9 @@ function ResultForm({ match }: { match: Match }) {
             </div>
           </div>
           <TournamentPicker id={`tour-${match.id}`} value={tournament} onChange={setTournament} />
+          <CountryPicker id={`country-${match.id}`} value={country} onChange={setCountry} />
           <FormatPicker id={`format-${match.id}`} value={format} onChange={setFormat} />
+
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
             <Input
@@ -549,9 +652,11 @@ function ResultForm({ match }: { match: Match }) {
 
       {locked && (
         <p className="mt-2 text-xs text-muted-foreground">
-          This fixture has started — details are locked. You can still enter the final score.
+          This fixture has started — details are locked. Tap “Locked” to override if there's a clear
+          error. You can still enter the final score.
         </p>
       )}
+
 
       <div className="mt-3 flex items-center gap-2">
         <Input
@@ -603,7 +708,26 @@ function ResultForm({ match }: { match: Match }) {
         description={`${match.player_a} vs ${match.player_b} and every prediction on it will be removed. This can't be undone.`}
         onConfirm={() => remove.mutate()}
       />
+      <ConfirmDialog
+        open={confirmOverride}
+        onOpenChange={setConfirmOverride}
+        title="Unlock this started fixture?"
+        description="Admin override: you'll be able to edit or delete a fixture that has already thrown off. Only do this to correct a clear and obvious error."
+        onConfirm={() => {
+          setOverride(true);
+          setConfirmOverride(false);
+          toast.success("Fixture unlocked");
+        }}
+      />
+      <ConfirmDialog
+        open={confirmReopen}
+        onOpenChange={setConfirmReopen}
+        title="Re-open this fixture?"
+        description="The result is cleared and the match leaves the archive until you save a new score. Everyone's points update straight away."
+        onConfirm={() => reopen.mutate()}
+      />
     </div>
+
   );
 }
 

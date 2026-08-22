@@ -8,8 +8,10 @@ import { MatchListSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { throwDart } from "@/components/DartThrow";
 import { CalendarCheck } from "lucide-react";
+import { CountryFlag } from "@/components/CountryFlag";
 import {
   formatDate,
+  guessCountry,
   hasStarted,
   matchFormatLabel,
   matchTournament,
@@ -18,6 +20,7 @@ import {
   useSession,
   type Match,
 } from "@/lib/league";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -221,9 +224,11 @@ function PredictionCard({
     <div className="panel p-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            {match.tournament || "Match"}
+          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+            <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
+            <span className="truncate">{match.tournament || "Match"}</span>
           </p>
+
           <p className="truncate font-display text-xl font-bold uppercase">
             {match.player_a} <span className="text-accent">vs</span> {match.player_b}
           </p>

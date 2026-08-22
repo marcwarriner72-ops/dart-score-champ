@@ -11,6 +11,7 @@ export type Match = {
   score_a: number | null;
   score_b: number | null;
   format?: string | null;
+  country?: string | null;
 };
 
 /** Preset PDC World Series events offered in the admin tournament dropdown. */
@@ -24,10 +25,84 @@ export const PRESET_TOURNAMENTS = [
   "World Series of Darts Finals",
 ];
 
+/** Host countries used for the flag shown next to a competition. */
+export const COUNTRIES: { code: string; name: string }[] = [
+  { code: "GB", name: "United Kingdom" },
+  { code: "IE", name: "Ireland" },
+  { code: "NL", name: "Netherlands" },
+  { code: "DE", name: "Germany" },
+  { code: "BE", name: "Belgium" },
+  { code: "DK", name: "Denmark" },
+  { code: "SE", name: "Sweden" },
+  { code: "AT", name: "Austria" },
+  { code: "GI", name: "Gibraltar" },
+  { code: "HU", name: "Hungary" },
+  { code: "CZ", name: "Czechia" },
+  { code: "PL", name: "Poland" },
+  { code: "BH", name: "Bahrain" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "AU", name: "Australia" },
+  { code: "NZ", name: "New Zealand" },
+  { code: "JP", name: "Japan" },
+  { code: "PH", name: "Philippines" },
+  { code: "ZA", name: "South Africa" },
+];
+
+/** Best guess of the host country from a competition name. */
+export function guessCountry(tournament: string | null | undefined): string | null {
+  const t = (tournament ?? "").toLowerCase();
+  if (!t) return null;
+  const rules: [RegExp, string][] = [
+    [/bahrain/, "BH"],
+    [/saudi/, "SA"],
+    [/dubai|abu dhabi|emirates/, "AE"],
+    [/nordic|denmark|copenhagen/, "DK"],
+    [/new zealand|auckland/, "NZ"],
+    [/australia|melbourne|wollongong/, "AU"],
+    [/\bus\b|united states|new york|madison/, "US"],
+    [/canada|toronto/, "CA"],
+    [/world series of darts finals|netherlands|dutch|amsterdam|rotterdam/, "NL"],
+    [/german|europe|dortmund|munich/, "DE"],
+    [/belgi|antwerp/, "BE"],
+    [/gibraltar/, "GI"],
+    [/hungar|budapest/, "HU"],
+    [/czech|prague/, "CZ"],
+    [/poland|warsaw/, "PL"],
+    [/ireland|dublin/, "IE"],
+    [/japan|tokyo/, "JP"],
+    [/philippin/, "PH"],
+    [/south africa/, "ZA"],
+    [/sweden|stockholm/, "SE"],
+    [/austria|graz/, "AT"],
+  ];
+  for (const [re, code] of rules) if (re.test(t)) return code;
+  return "GB";
+}
+
+/** Country code -> flag emoji (no image assets needed). */
+export function countryFlagEmoji(code: string | null | undefined) {
+  if (!code || code.length !== 2) return "";
+  return String.fromCodePoint(
+    ...code
+      .toUpperCase()
+      .split("")
+      .map((c) => 0x1f1e6 + c.charCodeAt(0) - 65),
+  );
+}
+
+/** Flag for a fixture: stored country first, otherwise inferred from the name. */
+export function matchFlag(m: Pick<Match, "country" | "tournament">) {
+  return countryFlagEmoji(m.country ?? guessCountry(m.tournament));
+}
+
 /** "Legs" or "Sets" — how this fixture is scored. */
 export function matchFormatLabel(m: Pick<Match, "format">) {
   return m.format === "sets" ? "Sets" : "Legs";
 }
+
 
 export type Prediction = {
   id: string;
@@ -63,7 +138,7 @@ export function useProfile(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url")
+        .select("*")
         .eq("id", userId!)
         .maybeSingle();
       if (error) throw error;
@@ -177,7 +252,7 @@ export function useProfiles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url");
+        .select("*");
       if (error) throw error;
       return data ?? [];
     },

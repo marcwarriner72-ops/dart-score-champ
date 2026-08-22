@@ -5,7 +5,9 @@ import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useProfile, useSession } from "@/lib/league";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { NextUpStrip, useMatchReminders } from "@/components/MatchReminders";
 import { Button } from "@/components/ui/button";
+
 
 export function AppShell({
   title,
@@ -21,6 +23,8 @@ export function AppShell({
   const { data: user } = useSession();
   const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
+  useMatchReminders();
+
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -52,7 +56,10 @@ export function AppShell({
         </Button>
       </header>
 
+      <NextUpStrip />
+
       <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+
 
       <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-lg -translate-x-1/2 border-t border-border/60 bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
         <div className="grid grid-cols-6">
