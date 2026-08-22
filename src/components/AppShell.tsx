@@ -5,7 +5,9 @@ import type { ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useProfile, useSession } from "@/lib/league";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { NextUpStrip, useMatchReminders } from "@/components/MatchReminders";
 import { Button } from "@/components/ui/button";
+
 
 export function AppShell({
   title,
