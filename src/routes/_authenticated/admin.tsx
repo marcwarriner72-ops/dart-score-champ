@@ -376,8 +376,10 @@ function NewMatchForm() {
           <Input id="pb" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
         </div>
       </div>
-      <TournamentPicker id="tour" value={tournament} onChange={setTournament} />
+      <TournamentPicker id="tour" value={tournament} onChange={pickTournament} />
+      <CountryPicker id="country" value={country} onChange={setCountry} />
       <FormatPicker id="format" value={format} onChange={setFormat} />
+
       <div className="space-y-1.5">
         <Label htmlFor="when">Starts at</Label>
         <Input
