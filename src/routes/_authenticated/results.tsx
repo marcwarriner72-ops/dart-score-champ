@@ -72,11 +72,41 @@ function ResultsPage() {
     return map;
   }, [profiles]);
 
+  const [query, setQuery] = useState("");
+  const [tournament, setTournament] = useState("all");
+  const [period, setPeriod] = useState("all");
+  const [state, setState] = useState("finished");
+
   const inPlay = matches.filter((m) => m.status !== "finished" && hasStarted(m));
-  const archive = matches
-    .filter((m) => m.status === "finished")
-    .slice()
-    .reverse();
+
+  const tournamentOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const m of matches) if (m.tournament) set.add(m.tournament);
+    return [...set].sort();
+  }, [matches]);
+
+  const archive = useMemo(() => {
+    const cutoff =
+      period === "all" ? 0 : Date.now() - Number(period) * 24 * 60 * 60 * 1000;
+    const q = query.trim().toLowerCase();
+    return matches
+      .filter((m) => {
+        if (state === "finished" && m.status !== "finished") return false;
+        if (state === "pending" && m.status === "finished") return false;
+        if (state !== "all" && state !== "finished" && state !== "pending") return false;
+        if (state === "pending" && !hasStarted(m)) return false;
+        if (state === "all" && !hasStarted(m) && m.status !== "finished") return false;
+        if (tournament !== "all" && (m.tournament ?? "Other") !== tournament) return false;
+        if (cutoff && new Date(m.starts_at).getTime() < cutoff) return false;
+        if (
+          q &&
+          !`${m.player_a} ${m.player_b} ${m.tournament ?? ""}`.toLowerCase().includes(q)
+        )
+          return false;
+        return true;
+      })
+      .sort((x, y) => new Date(y.starts_at).getTime() - new Date(x.starts_at).getTime());
+  }, [matches, query, tournament, period, state]);
 
   if (isLoading) {
     return (
@@ -110,12 +140,61 @@ function ResultsPage() {
       </div>
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Archive</h2>
-      <div className="mt-2 space-y-3">
+      <div className="panel mt-2 space-y-2 p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search player or competition"
+            className="h-10 pl-9"
+            aria-label="Search the archive"
+          />
+        </div>
+        <div className="grid grid-cols-3 gap-2">
+          <Select value={tournament} onValueChange={setTournament}>
+            <SelectTrigger className="h-10" aria-label="Filter by competition">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All events</SelectItem>
+              {tournamentOptions.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {t}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={period} onValueChange={setPeriod}>
+            <SelectTrigger className="h-10" aria-label="Filter by date">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {PERIODS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={state} onValueChange={setState}>
+            <SelectTrigger className="h-10" aria-label="Filter by completion">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="finished">Completed</SelectItem>
+              <SelectItem value="pending">Awaiting result</SelectItem>
+              <SelectItem value="all">Everything</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="mt-3 space-y-3">
         {archive.length === 0 ? (
           <EmptyState
             icon={<Archive className="size-6" />}
-            title="Archive is empty"
-            description="Finished fixtures and the points they scored land here."
+            title="Nothing to show"
+            description="Try clearing the search or widening the date range."
           />
         ) : (
           archive.map((m) => (
@@ -129,6 +208,7 @@ function ResultsPage() {
           ))
         )}
       </div>
+
     </AppShell>
   );
 }
