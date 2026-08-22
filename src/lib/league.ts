@@ -138,7 +138,7 @@ export function useProfile(userId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url")
+        .select("*")
         .eq("id", userId!)
         .maybeSingle();
       if (error) throw error;
@@ -252,7 +252,7 @@ export function useProfiles() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url");
+        .select("*");
       if (error) throw error;
       return data ?? [];
     },
