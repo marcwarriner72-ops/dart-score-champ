@@ -535,18 +535,40 @@ function ResultForm({ match }: { match: Match }) {
           <p className="truncate font-display text-lg font-bold uppercase">
             {match.player_a} <span className="text-accent">vs</span> {match.player_b}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {formatDate(match.starts_at)}
-            {match.tournament ? ` · ${match.tournament}` : ""} · {matchFormatLabel(match)}
+          <p className="flex items-center gap-1 text-xs text-muted-foreground">
+            <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
+            <span className="truncate">
+              {formatDate(match.starts_at)}
+              {match.tournament ? ` · ${match.tournament}` : ""} · {matchFormatLabel(match)}
+            </span>
           </p>
         </div>
         <div className="flex shrink-0 items-center">
           {locked ? (
-            <span className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+            <button
+              type="button"
+              onClick={() => setConfirmOverride(true)}
+              className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
+            >
               <Lock className="size-3" /> Locked
-            </span>
+            </button>
           ) : (
             <>
+              {started && (
+                <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
+                  <Unlock className="size-3" /> Override
+                </span>
+              )}
+              {match.status === "finished" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Re-open fixture"
+                  onClick={() => setConfirmReopen(true)}
+                >
+                  <RotateCcw className="size-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -590,7 +612,9 @@ function ResultForm({ match }: { match: Match }) {
             </div>
           </div>
           <TournamentPicker id={`tour-${match.id}`} value={tournament} onChange={setTournament} />
+          <CountryPicker id={`country-${match.id}`} value={country} onChange={setCountry} />
           <FormatPicker id={`format-${match.id}`} value={format} onChange={setFormat} />
+
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
             <Input
