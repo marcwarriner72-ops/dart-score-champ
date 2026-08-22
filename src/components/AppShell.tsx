@@ -56,7 +56,10 @@ export function AppShell({
         </Button>
       </header>
 
+      <NextUpStrip />
+
       <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
+
 
       <nav className="fixed bottom-0 left-1/2 z-20 w-full max-w-lg -translate-x-1/2 border-t border-border/60 bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md">
         <div className="grid grid-cols-6">
