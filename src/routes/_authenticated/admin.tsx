@@ -429,16 +429,24 @@ function ResultForm({ match }: { match: Match }) {
   const [tournament, setTournament] = useState(match.tournament ?? "");
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
+  const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  /** Once the throw-off time passes the fixture details are locked (enforced in the database too). */
-  const locked = hasStarted(match);
+  const [confirmOverride, setConfirmOverride] = useState(false);
+  const [confirmReopen, setConfirmReopen] = useState(false);
+  /** Started fixtures are locked for everyone, but an admin can override to fix an obvious error. */
+  const started = hasStarted(match);
+  const [override, setOverride] = useState(false);
+  const locked = started && !override;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["matches"] });
     queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    queryClient.invalidateQueries({ queryKey: ["tournament-leaderboard"] });
+    queryClient.invalidateQueries({ queryKey: ["tournaments"] });
   };
+
 
   const saveResult = useMutation({
     mutationFn: async () => {
