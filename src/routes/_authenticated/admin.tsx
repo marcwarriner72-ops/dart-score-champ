@@ -652,9 +652,11 @@ function ResultForm({ match }: { match: Match }) {
 
       {locked && (
         <p className="mt-2 text-xs text-muted-foreground">
-          This fixture has started — details are locked. You can still enter the final score.
+          This fixture has started — details are locked. Tap “Locked” to override if there's a clear
+          error. You can still enter the final score.
         </p>
       )}
+
 
       <div className="mt-3 flex items-center gap-2">
         <Input
