@@ -23,6 +23,8 @@ export function AppShell({
   const { data: user } = useSession();
   const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
+  useMatchReminders();
+
 
   async function signOut() {
     await queryClient.cancelQueries();
