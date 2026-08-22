@@ -241,6 +241,83 @@ function ProfilePage() {
           Save username
         </Button>
       </section>
+
+      <section className="panel mt-4 space-y-3 p-4">
+        <div>
+          <h2 className="font-display text-xl font-bold uppercase">Your details</h2>
+          <p className="text-xs text-muted-foreground">
+            Optional — shown on your player card to the rest of the league.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="fav">Favourite player</Label>
+            <Input
+              id="fav"
+              value={details.favourite_player}
+              maxLength={40}
+              onChange={(e) => setDetails((d) => ({ ...d, favourite_player: e.target.value }))}
+              placeholder="Luke Littler"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="home">Hometown</Label>
+            <Input
+              id="home"
+              value={details.hometown}
+              maxLength={40}
+              onChange={(e) => setDetails((d) => ({ ...d, hometown: e.target.value }))}
+              placeholder="Warrington"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="song">Walk-on song</Label>
+            <Input
+              id="song"
+              value={details.walk_on_song}
+              maxLength={60}
+              onChange={(e) => setDetails((d) => ({ ...d, walk_on_song: e.target.value }))}
+              placeholder="Greenlight"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="checkout">Highest checkout</Label>
+            <Input
+              id="checkout"
+              inputMode="numeric"
+              value={details.highest_checkout}
+              onChange={(e) =>
+                setDetails((d) => ({
+                  ...d,
+                  highest_checkout: e.target.value.replace(/\D/g, "").slice(0, 3),
+                }))
+              }
+              placeholder="170"
+            />
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="bio">About you</Label>
+          <Textarea
+            id="bio"
+            value={details.bio}
+            maxLength={200}
+            rows={3}
+            onChange={(e) => setDetails((d) => ({ ...d, bio: e.target.value }))}
+            placeholder="Pub team, best 9-darter story, trash talk…"
+          />
+        </div>
+        <Button
+          className="h-11 w-full font-bold uppercase"
+          disabled={saveDetails.isPending}
+          onClick={() => saveDetails.mutate()}
+        >
+          Save details
+        </Button>
+      </section>
+
+      <ReminderSettings />
     </AppShell>
+
   );
 }
