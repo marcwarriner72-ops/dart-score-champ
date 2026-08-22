@@ -708,7 +708,26 @@ function ResultForm({ match }: { match: Match }) {
         description={`${match.player_a} vs ${match.player_b} and every prediction on it will be removed. This can't be undone.`}
         onConfirm={() => remove.mutate()}
       />
+      <ConfirmDialog
+        open={confirmOverride}
+        onOpenChange={setConfirmOverride}
+        title="Unlock this started fixture?"
+        description="Admin override: you'll be able to edit or delete a fixture that has already thrown off. Only do this to correct a clear and obvious error."
+        onConfirm={() => {
+          setOverride(true);
+          setConfirmOverride(false);
+          toast.success("Fixture unlocked");
+        }}
+      />
+      <ConfirmDialog
+        open={confirmReopen}
+        onOpenChange={setConfirmReopen}
+        title="Re-open this fixture?"
+        description="The result is cleared and the match leaves the archive until you save a new score. Everyone's points update straight away."
+        onConfirm={() => reopen.mutate()}
+      />
     </div>
+
   );
 }
 
