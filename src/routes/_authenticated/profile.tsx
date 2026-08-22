@@ -59,11 +59,60 @@ function ProfilePage() {
   const { data: user } = useSession();
   const { data: profile } = useProfile(user?.id);
   const [name, setName] = useState("");
+  const [details, setDetails] = useState({
+    favourite_player: "",
+    hometown: "",
+    walk_on_song: "",
+    highest_checkout: "",
+    bio: "",
+  });
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile?.display_name) setName(profile.display_name);
   }, [profile?.display_name]);
+
+  useEffect(() => {
+    if (!profile) return;
+    setDetails({
+      favourite_player: profile.favourite_player ?? "",
+      hometown: profile.hometown ?? "",
+      walk_on_song: profile.walk_on_song ?? "",
+      highest_checkout:
+        profile.highest_checkout === null || profile.highest_checkout === undefined
+          ? ""
+          : String(profile.highest_checkout),
+      bio: profile.bio ?? "",
+    });
+  }, [profile]);
+
+  const saveDetails = useMutation({
+    mutationFn: async () => {
+      const checkout = details.highest_checkout.trim();
+      const value = checkout === "" ? null : Number(checkout);
+      if (value !== null && (value < 2 || value > 170)) {
+        throw new Error("A checkout has to be between 2 and 170");
+      }
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          favourite_player: details.favourite_player.trim() || null,
+          hometown: details.hometown.trim() || null,
+          walk_on_song: details.walk_on_song.trim() || null,
+          highest_checkout: value,
+          bio: details.bio.trim() || null,
+        })
+        .eq("id", user!.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Profile updated");
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      queryClient.invalidateQueries({ queryKey: ["profiles"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save profile"),
+  });
+
 
   const save = useMutation({
     mutationFn: async () => {
