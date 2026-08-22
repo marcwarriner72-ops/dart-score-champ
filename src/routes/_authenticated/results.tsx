@@ -1,12 +1,22 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { Archive, Target } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Archive, Search, Target } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { CountryFlag } from "@/components/CountryFlag";
 import { EmptyState } from "@/components/EmptyState";
 import { MatchListSkeleton } from "@/components/Skeletons";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   formatDate,
+  guessCountry,
   hasStarted,
   predictionPoints,
   useMatches,
@@ -18,6 +28,15 @@ import {
 } from "@/lib/league";
 
 type Person = { name: string; avatar: string | null };
+
+const PERIODS = [
+  { value: "all", label: "All time" },
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 3 months" },
+];
+
+
 
 
 export const Route = createFileRoute("/_authenticated/results")({
