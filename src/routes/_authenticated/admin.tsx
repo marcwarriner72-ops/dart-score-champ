@@ -106,6 +106,40 @@ function FormatPicker({
   );
 }
 
+/** Host country for the competition — drives the flag shown around the app. */
+function CountryPicker({
+  id,
+  value,
+  onChange,
+}: {
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>Host country</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger id={id} className="h-11 w-full">
+          <SelectValue placeholder="Select a country" />
+        </SelectTrigger>
+        <SelectContent>
+          {COUNTRIES.map((c) => (
+            <SelectItem key={c.code} value={c.code}>
+              <span className="mr-2">
+                <CountryFlag code={c.code} />
+              </span>
+              {c.name}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+
+
 export const Route = createFileRoute("/_authenticated/admin")({
   component: AdminPage,
   head: () => ({
