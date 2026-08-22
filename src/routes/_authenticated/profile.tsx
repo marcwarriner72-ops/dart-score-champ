@@ -321,3 +321,57 @@ function ProfilePage() {
 
   );
 }
+
+/** Device-level reminders before each fixture throws off. */
+function ReminderSettings() {
+  const [enabled, setEnabled] = useState(false);
+  const [permission, setPermission] = useState<string>("default");
+
+  useEffect(() => {
+    setEnabled(remindersEnabled());
+    setPermission(notificationPermission());
+  }, []);
+
+  async function toggle(on: boolean) {
+    if (on) {
+      const result = await requestNotificationPermission();
+      setPermission(result);
+      if (result === "denied") {
+        toast.error("Notifications are blocked in your browser settings");
+        return;
+      }
+    }
+    setEnabled(on);
+    setRemindersEnabled(on);
+    toast.success(on ? "Reminders on" : "Reminders off");
+  }
+
+  return (
+    <section className="panel mt-4 space-y-3 p-4">
+      <div className="flex items-start gap-3">
+        <Bell className="mt-1 size-5 shrink-0 text-accent" />
+        <div className="min-w-0 flex-1">
+          <h2 className="font-display text-xl font-bold uppercase">Match reminders</h2>
+          <p className="text-xs text-muted-foreground">
+            Get a nudge an hour before and again 5 minutes before each fixture, plus when a new
+            competition is about to get under way.
+          </p>
+        </div>
+        <Switch checked={enabled} onCheckedChange={toggle} aria-label="Match reminders" />
+      </div>
+      {permission === "unsupported" ? (
+        <p className="text-xs text-muted-foreground">
+          This browser can't show pop-up alerts — you'll still see reminders inside the app.
+        </p>
+      ) : permission === "denied" ? (
+        <p className="text-xs text-destructive">
+          Notifications are blocked. Allow them for this site in your browser settings.
+        </p>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Tip: add the app to your home screen so reminders reach you faster.
+        </p>
+      )}
+    </section>
+  );
+}
