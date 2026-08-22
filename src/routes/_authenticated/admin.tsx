@@ -324,7 +324,15 @@ function NewMatchForm() {
   const [tournament, setTournament] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [format, setFormat] = useState("legs");
+  const [country, setCountry] = useState("GB");
   const [confirming, setConfirming] = useState(false);
+
+  /** Picking a known competition pre-fills its host country. */
+  function pickTournament(v: string) {
+    setTournament(v);
+    const guess = guessCountry(v);
+    if (guess) setCountry(guess);
+  }
 
   const create = useMutation({
     mutationFn: async () => {
@@ -336,6 +344,7 @@ function NewMatchForm() {
         tournament: tournament.trim() || null,
         starts_at: new Date(startsAt).toISOString(),
         format,
+        country,
       });
       if (error) throw error;
     },
@@ -350,6 +359,7 @@ function NewMatchForm() {
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
     },
+
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not add match"),
   });
 
