@@ -7,7 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { MatchListSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { throwDart } from "@/components/DartThrow";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/components/CountryFlag";
 import {
   formatDate,
@@ -23,14 +23,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const ALL_TOURNAMENTS = "__all__";
 import {
