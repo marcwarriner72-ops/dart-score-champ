@@ -7,7 +7,7 @@ import { AppShell } from "@/components/AppShell";
 import { MatchListSkeleton } from "@/components/Skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { throwDart } from "@/components/DartThrow";
-import { CalendarCheck } from "lucide-react";
+import { CalendarCheck, ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/components/CountryFlag";
 import {
   formatDate,
@@ -23,14 +23,6 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const ALL_TOURNAMENTS = "__all__";
 import {
@@ -70,14 +62,35 @@ function PredictPage() {
   const { data: matches = [], isLoading } = useMatches();
   const { data: predictions = [] } = useMyPredictions(user?.id);
   const [tournament, setTournament] = useState<string>(ALL_TOURNAMENTS);
+  const [onlyUnpredicted, setOnlyUnpredicted] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string> | null>(null);
 
   const open = matches.filter((m) => m.status === "upcoming" && !hasStarted(m));
   const tournaments = Array.from(new Set(open.map(matchTournament)));
-  const visible =
+  const inTournament =
     tournament === ALL_TOURNAMENTS ? open : open.filter((m) => matchTournament(m) === tournament);
+  const visible = onlyUnpredicted
+    ? inTournament.filter((m) => !predictions.some((p) => p.match_id === m.id))
+    : inTournament;
 
-  const done = visible.filter((m) => predictions.some((p) => p.match_id === m.id)).length;
-  const next = visible[0];
+  const remaining = inTournament.filter((m) => !predictions.some((p) => p.match_id === m.id)).length;
+  const done = inTournament.length - remaining;
+  const next = open[0];
+
+  const groups = tournaments
+    .map((t) => ({ name: t, fixtures: visible.filter((m) => matchTournament(m) === t) }))
+    .filter((g) => g.fixtures.length > 0);
+  const openGroups = expanded ?? new Set(next ? [matchTournament(next)] : []);
+
+  function toggleGroup(name: string) {
+    setExpanded(
+      new Set(
+        openGroups.has(name)
+          ? [...openGroups].filter((t) => t !== name)
+          : [...openGroups, name],
+      ),
+    );
+  }
 
   return (
     <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact score">
@@ -101,46 +114,62 @@ function PredictPage() {
         <>
           <section className="panel p-4">
             <p className="font-display text-xl font-bold uppercase">
-              {done === visible.length ? "You're all set" : `${visible.length - done} to call`}
+              {remaining === 0 ? "You're all set" : `${remaining} to call`}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {done === visible.length
+              {remaining === 0
                 ? "Every open fixture is predicted. You can still tweak them until throw-off."
-                : `${done} of ${visible.length} predicted so far.`}
+                : `${done} of ${inTournament.length} predicted so far.`}
             </p>
             {next && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Next up: {next.player_a} vs {next.player_b} · {formatDate(next.starts_at)}
               </p>
             )}
-            {tournaments.length > 1 && (
-              <div className="mt-3 space-y-1.5">
-                <Label htmlFor="tournament-filter" className="text-xs uppercase tracking-wide">
-                  Tournament
-                </Label>
-                <Select value={tournament} onValueChange={setTournament}>
-                  <SelectTrigger id="tournament-filter" className="h-11 w-full">
-                    <SelectValue placeholder="All tournaments" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_TOURNAMENTS}>All tournaments</SelectItem>
-                    {tournaments.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <FilterChip
+                active={tournament === ALL_TOURNAMENTS}
+                label="All"
+                onClick={() => setTournament(ALL_TOURNAMENTS)}
+              />
+              {tournaments.map((t) => (
+                <FilterChip
+                  key={t}
+                  active={tournament === t}
+                  label={t}
+                  onClick={() => setTournament(t)}
+                />
+              ))}
+              <FilterChip
+                active={onlyUnpredicted}
+                label={`To predict (${remaining})`}
+                onClick={() => setOnlyUnpredicted((v) => !v)}
+              />
+            </div>
           </section>
 
           <div className="mt-4 space-y-4">
             {visible.length === 0 ? (
               <EmptyState
                 title="Nothing here"
-                description="No open fixtures in this tournament yet."
+                description={
+                  onlyUnpredicted
+                    ? "You've predicted everything in this view."
+                    : "No open fixtures in this tournament yet."
+                }
               />
+            ) : tournament === ALL_TOURNAMENTS ? (
+              groups.map((g) => (
+                <TournamentSection
+                  key={g.name}
+                  name={g.name}
+                  matches={g.fixtures}
+                  expanded={openGroups.has(g.name)}
+                  onToggle={() => toggleGroup(g.name)}
+                  userId={user?.id}
+                  predictions={predictions}
+                />
+              ))
             ) : (
               visible.map((m) => (
                 <PredictionCard
@@ -328,5 +357,80 @@ function WinnerButton({
     >
       {label}
     </button>
+  );
+}
+
+function FilterChip({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+        active
+          ? "border-primary bg-primary/20 text-primary"
+          : "border-border bg-secondary/40 text-muted-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function TournamentSection({
+  name,
+  matches,
+  expanded,
+  onToggle,
+  userId,
+  predictions,
+}: {
+  name: string;
+  matches: Match[];
+  expanded: boolean;
+  onToggle: () => void;
+  userId: string | undefined;
+  predictions: { match_id: string; predicted_winner: string; score_a: number; score_b: number }[];
+}) {
+  const flagCode = matches[0]?.country ?? guessCountry(name);
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2.5 text-left"
+        aria-expanded={expanded}
+      >
+        <CountryFlag code={flagCode} />
+        <span className="min-w-0 flex-1 truncate font-display text-sm font-bold uppercase">
+          {name}
+        </span>
+        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+          {matches.length}
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div className="mt-3 space-y-4">
+          {matches.map((m) => (
+            <PredictionCard
+              key={m.id}
+              match={m}
+              userId={userId}
+              existing={predictions.find((p) => p.match_id === m.id)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
