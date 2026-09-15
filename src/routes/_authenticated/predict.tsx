@@ -152,8 +152,24 @@ function PredictPage() {
             {visible.length === 0 ? (
               <EmptyState
                 title="Nothing here"
-                description="No open fixtures in this tournament yet."
+                description={
+                  onlyUnpredicted
+                    ? "You've predicted everything in this view."
+                    : "No open fixtures in this tournament yet."
+                }
               />
+            ) : tournament === ALL_TOURNAMENTS ? (
+              groups.map((g) => (
+                <TournamentSection
+                  key={g.name}
+                  name={g.name}
+                  matches={g.fixtures}
+                  expanded={openGroups.has(g.name)}
+                  onToggle={() => toggleGroup(g.name)}
+                  userId={user?.id}
+                  predictions={predictions}
+                />
+              ))
             ) : (
               visible.map((m) => (
                 <PredictionCard
