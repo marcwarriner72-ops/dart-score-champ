@@ -62,14 +62,35 @@ function PredictPage() {
   const { data: matches = [], isLoading } = useMatches();
   const { data: predictions = [] } = useMyPredictions(user?.id);
   const [tournament, setTournament] = useState<string>(ALL_TOURNAMENTS);
+  const [onlyUnpredicted, setOnlyUnpredicted] = useState(false);
+  const [expanded, setExpanded] = useState<Set<string> | null>(null);
 
   const open = matches.filter((m) => m.status === "upcoming" && !hasStarted(m));
   const tournaments = Array.from(new Set(open.map(matchTournament)));
-  const visible =
+  const inTournament =
     tournament === ALL_TOURNAMENTS ? open : open.filter((m) => matchTournament(m) === tournament);
+  const visible = onlyUnpredicted
+    ? inTournament.filter((m) => !predictions.some((p) => p.match_id === m.id))
+    : inTournament;
 
-  const done = visible.filter((m) => predictions.some((p) => p.match_id === m.id)).length;
-  const next = visible[0];
+  const remaining = inTournament.filter((m) => !predictions.some((p) => p.match_id === m.id)).length;
+  const done = inTournament.length - remaining;
+  const next = open[0];
+
+  const groups = tournaments
+    .map((t) => ({ name: t, fixtures: visible.filter((m) => matchTournament(m) === t) }))
+    .filter((g) => g.fixtures.length > 0);
+  const openGroups = expanded ?? new Set(next ? [matchTournament(next)] : []);
+
+  function toggleGroup(name: string) {
+    setExpanded(
+      new Set(
+        openGroups.has(name)
+          ? [...openGroups].filter((t) => t !== name)
+          : [...openGroups, name],
+      ),
+    );
+  }
 
   return (
     <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact score">
