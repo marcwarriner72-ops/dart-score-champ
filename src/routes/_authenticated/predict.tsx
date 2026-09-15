@@ -114,38 +114,38 @@ function PredictPage() {
         <>
           <section className="panel p-4">
             <p className="font-display text-xl font-bold uppercase">
-              {done === visible.length ? "You're all set" : `${visible.length - done} to call`}
+              {remaining === 0 ? "You're all set" : `${remaining} to call`}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              {done === visible.length
+              {remaining === 0
                 ? "Every open fixture is predicted. You can still tweak them until throw-off."
-                : `${done} of ${visible.length} predicted so far.`}
+                : `${done} of ${inTournament.length} predicted so far.`}
             </p>
             {next && (
               <p className="mt-2 text-xs text-muted-foreground">
                 Next up: {next.player_a} vs {next.player_b} · {formatDate(next.starts_at)}
               </p>
             )}
-            {tournaments.length > 1 && (
-              <div className="mt-3 space-y-1.5">
-                <Label htmlFor="tournament-filter" className="text-xs uppercase tracking-wide">
-                  Tournament
-                </Label>
-                <Select value={tournament} onValueChange={setTournament}>
-                  <SelectTrigger id="tournament-filter" className="h-11 w-full">
-                    <SelectValue placeholder="All tournaments" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ALL_TOURNAMENTS}>All tournaments</SelectItem>
-                    {tournaments.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {t}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+            <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <FilterChip
+                active={tournament === ALL_TOURNAMENTS}
+                label="All"
+                onClick={() => setTournament(ALL_TOURNAMENTS)}
+              />
+              {tournaments.map((t) => (
+                <FilterChip
+                  key={t}
+                  active={tournament === t}
+                  label={t}
+                  onClick={() => setTournament(t)}
+                />
+              ))}
+              <FilterChip
+                active={onlyUnpredicted}
+                label={`To predict (${remaining})`}
+                onClick={() => setOnlyUnpredicted((v) => !v)}
+              />
+            </div>
           </section>
 
           <div className="mt-4 space-y-4">
