@@ -359,3 +359,78 @@ function WinnerButton({
     </button>
   );
 }
+
+function FilterChip({
+  active,
+  label,
+  onClick,
+}: {
+  active: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-colors ${
+        active
+          ? "border-primary bg-primary/20 text-primary"
+          : "border-border bg-secondary/40 text-muted-foreground"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function TournamentSection({
+  name,
+  matches,
+  expanded,
+  onToggle,
+  userId,
+  predictions,
+}: {
+  name: string;
+  matches: Match[];
+  expanded: boolean;
+  onToggle: () => void;
+  userId: string | undefined;
+  predictions: { match_id: string; predicted_winner: string; score_a: number; score_b: number }[];
+}) {
+  const flagCode = matches[0]?.country ?? guessCountry(name);
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 rounded-lg border border-border bg-secondary/40 px-3 py-2.5 text-left"
+        aria-expanded={expanded}
+      >
+        <CountryFlag code={flagCode} />
+        <span className="min-w-0 flex-1 truncate font-display text-sm font-bold uppercase">
+          {name}
+        </span>
+        <span className="shrink-0 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
+          {matches.length}
+        </span>
+        <ChevronDown
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+        />
+      </button>
+      {expanded && (
+        <div className="mt-3 space-y-4">
+          {matches.map((m) => (
+            <PredictionCard
+              key={m.id}
+              match={m}
+              userId={userId}
+              existing={predictions.find((p) => p.match_id === m.id)}
+            />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
