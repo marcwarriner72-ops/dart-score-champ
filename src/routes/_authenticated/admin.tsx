@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock } from "lucide-react";
+import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
@@ -685,6 +685,10 @@ function ResultForm({ match }: { match: Match }) {
           {match.status === "finished" ? "Update" : "Save result"}
         </Button>
       </div>
+
+      <AdminPredictions match={match} />
+
+
 
       <ConfirmDialog
         open={confirmResult}
