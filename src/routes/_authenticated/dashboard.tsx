@@ -39,7 +39,20 @@ function Dashboard() {
   const { data: user } = useSession();
   const { data: matches = [] } = useMatches();
   const { data: predictions = [] } = useMyPredictions(user?.id);
-  const { data: board = [] } = useLeaderboard();
+  const { data: standings = [] } = useTournamentLeaderboard();
+  const { data: tournaments = [] } = useTournaments();
+
+  const currentTournament =
+    tournaments.find((t) => t.is_active)?.tournament ?? tournaments[0]?.tournament ?? null;
+
+  const board = useMemo(
+    () =>
+      standings
+        .filter((r) => r.tournament === currentTournament)
+        .slice()
+        .sort((a, b) => (b.points ?? 0) - (a.points ?? 0)),
+    [standings, currentTournament],
+  );
 
   const upcoming = matches.filter((m) => m.status === "upcoming");
   const finished = matches.filter((m) => m.status === "finished").slice(-5).reverse();
@@ -48,7 +61,10 @@ function Dashboard() {
   const rank = me ? board.findIndex((r) => r.user_id === user?.id) + 1 : null;
 
   return (
-    <AppShell title="Dashboard" subtitle="Your league at a glance">
+    <AppShell
+      title="Dashboard"
+      subtitle={currentTournament ? `Your ${currentTournament} so far` : "Your league at a glance"}
+    >
       <div className="grid grid-cols-3 gap-3">
         <Stat label="Points" value={me?.points ?? 0} highlight />
         <Stat label="Rank" value={rank ? `#${rank}` : "—"} />
