@@ -3,7 +3,7 @@ import { Timer } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CountryFlag } from "@/components/CountryFlag";
-import { getNextDartsEvent } from "@/lib/sportradar.functions";
+import { getNextDartsEvent } from "@/lib/sportsdb.functions";
 import { formatDate, matchFormatLabel, type Match } from "@/lib/league";
 
 
