@@ -25,6 +25,29 @@ export const PRESET_TOURNAMENTS = [
   "World Series of Darts Finals",
 ];
 
+/** Built-in calendar of official PDC events, used for the countdown when no fixtures are scheduled. */
+export const PDC_EVENTS: { name: string; startsAt: string; country: string }[] = [
+  { name: "World Grand Prix", startsAt: "2026-10-05T18:00:00Z", country: "IE" },
+  { name: "European Championship", startsAt: "2026-10-22T17:00:00Z", country: "DE" },
+  { name: "World Series of Darts Finals", startsAt: "2026-11-06T18:00:00Z", country: "NL" },
+  { name: "Grand Slam of Darts", startsAt: "2026-11-14T12:00:00Z", country: "GB" },
+  { name: "Players Championship Finals", startsAt: "2026-11-26T12:00:00Z", country: "GB" },
+  { name: "World Darts Championship", startsAt: "2026-12-10T18:30:00Z", country: "GB" },
+  { name: "Bahrain Darts Masters", startsAt: "2027-01-14T15:00:00Z", country: "BH" },
+  { name: "The Masters", startsAt: "2027-01-29T12:00:00Z", country: "GB" },
+  { name: "Premier League Darts", startsAt: "2027-02-04T19:00:00Z", country: "GB" },
+  { name: "UK Open", startsAt: "2027-03-05T12:00:00Z", country: "GB" },
+];
+
+/** The next official PDC event still to come, or null when the calendar has run out. */
+export function nextPdcEvent(now = Date.now()) {
+  return (
+    PDC_EVENTS.filter((e) => new Date(e.startsAt).getTime() > now).sort((a, b) =>
+      a.startsAt.localeCompare(b.startsAt),
+    )[0] ?? null
+  );
+}
+
 /** Host countries used for the flag shown next to a competition. */
 export const COUNTRIES: { code: string; name: string }[] = [
   { code: "GB", name: "United Kingdom" },
