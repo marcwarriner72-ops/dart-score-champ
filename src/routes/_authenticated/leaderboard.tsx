@@ -6,7 +6,6 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { EmptyState } from "@/components/EmptyState";
 import { RowListSkeleton } from "@/components/Skeletons";
 import {
-  useLeaderboard,
   useProfiles,
   useSession,
   useTournamentLeaderboard,
