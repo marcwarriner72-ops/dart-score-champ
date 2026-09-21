@@ -548,11 +548,12 @@ function ResultForm({ match }: { match: Match }) {
             <button
               type="button"
               onClick={() => setConfirmOverride(true)}
-              className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
+              className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-accent"
             >
-              <Lock className="size-3" /> Locked
+              <Unlock className="size-3" /> Fix error
             </button>
           ) : (
+
             <>
               {started && (
                 <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
