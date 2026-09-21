@@ -239,7 +239,7 @@ function AdminPage() {
                 {g.name} · {g.matches.length}
               </h3>
               {g.matches.map((m) => (
-                <div key={m.id} className="opacity-80 transition hover:opacity-100">
+                <div key={m.id}>
                   <ResultForm match={m} />
                 </div>
               ))}
@@ -714,8 +714,9 @@ function ResultForm({ match }: { match: Match }) {
       <ConfirmDialog
         open={confirmOverride}
         onOpenChange={setConfirmOverride}
-        title="Unlock this started fixture?"
-        description="Admin override: you'll be able to edit or delete a fixture that has already thrown off. Only do this to correct a clear and obvious error."
+        title="Fix a clear error?"
+        description="You'll be able to edit, re-open or delete this fixture even though it has already been played. Only do this to correct a clear and obvious error."
+
         onConfirm={() => {
           setOverride(true);
           setConfirmOverride(false);
