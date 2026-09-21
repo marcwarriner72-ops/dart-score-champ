@@ -904,7 +904,7 @@ function AdminPredictions({ match }: { match: Match }) {
       <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2 text-left">
         <Users className="size-4 text-accent" />
         <span className="text-xs font-bold uppercase tracking-wide">
-          Predictions ({picks.length || 0})
+          Predictions{open ? ` (${picks.length})` : ""}
         </span>
         <ChevronDown
           className={`ml-auto size-4 transition-transform ${open ? "rotate-180" : ""}`}
@@ -947,6 +947,9 @@ function AdminPredictions({ match }: { match: Match }) {
                   <SelectContent>
                     <SelectItem value={match.player_a}>{match.player_a}</SelectItem>
                     <SelectItem value={match.player_b}>{match.player_b}</SelectItem>
+                    {d.winner && d.winner !== match.player_a && d.winner !== match.player_b && (
+                      <SelectItem value={d.winner}>{d.winner} (old pick)</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-2">
