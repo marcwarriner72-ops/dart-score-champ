@@ -23,7 +23,7 @@ export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
   const fetchNextEvent = useServerFn(getNextDartsEvent);
 
   const { data: liveEvent } = useQuery({
-    queryKey: ["next-darts-event"],
+    queryKey: ["next-darts-event", "thesportsdb"],
     queryFn: () => fetchNextEvent(),
     staleTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
