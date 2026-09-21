@@ -20,6 +20,7 @@ import {
   useSession,
   useTournaments,
   type Match,
+  type Prediction,
 } from "@/lib/league";
 
 import { Button } from "@/components/ui/button";
