@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
-import { formatDate, matchFormatLabel, type Match } from "@/lib/league";
+import { CountryFlag } from "@/components/CountryFlag";
+import { formatDate, matchFormatLabel, nextPdcEvent, type Match } from "@/lib/league";
 
 function parts(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -26,15 +27,41 @@ export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
 
   if (!next) {
+    const event = nextPdcEvent(now);
+    if (!event) {
+      return (
+        <section className="panel p-4">
+          <div className="flex items-center gap-2">
+            <Timer className="size-4 text-accent" />
+            <h2 className="font-display text-xl font-bold uppercase">Next fixture</h2>
+          </div>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Nothing scheduled yet — the countdown starts when the next match is added.
+          </p>
+        </section>
+      );
+    }
+
+    const t = parts(new Date(event.startsAt).getTime() - now);
     return (
       <section className="panel p-4">
         <div className="flex items-center gap-2">
           <Timer className="size-4 text-accent" />
-          <h2 className="font-display text-xl font-bold uppercase">Next fixture</h2>
+          <h2 className="font-display text-xl font-bold uppercase">Next competition</h2>
         </div>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Nothing scheduled yet — the countdown starts when the next match is added.
+        <p className="mt-2 flex items-center gap-1.5 font-display text-lg font-bold uppercase">
+          <CountryFlag code={event.country} />
+          <span className="truncate">{event.name}</span>
         </p>
+        <p className="text-xs text-muted-foreground">
+          {formatDate(event.startsAt)} · no fixtures added yet
+        </p>
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          <Unit value={t.days} label="Days" />
+          <Unit value={t.hours} label="Hrs" />
+          <Unit value={t.mins} label="Min" />
+          <Unit value={t.secs} label="Sec" />
+        </div>
       </section>
     );
   }
