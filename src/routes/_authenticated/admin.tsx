@@ -802,3 +802,214 @@ function TournamentPicker({
     </div>
   );
 }
+
+/** Admin panel to add, change or remove any player's prediction on a fixture — even after it's played. */
+function AdminPredictions({ match }: { match: Match }) {
+  const queryClient = useQueryClient();
+  const { data: profiles = [] } = useProfiles();
+  const [open, setOpen] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, { winner: string; a: string; b: string }>>({});
+  const [confirmFor, setConfirmFor] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+
+  const { data: picks = [] } = useQuery({
+    queryKey: ["match-predictions", match.id],
+    enabled: open,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("predictions")
+        .select("*")
+        .eq("match_id", match.id);
+      if (error) throw error;
+      return (data ?? []) as Prediction[];
+    },
+  });
+
+  const byUser = new Map(picks.map((p) => [p.user_id, p]));
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["match-predictions", match.id] });
+    queryClient.invalidateQueries({ queryKey: ["all-predictions"] });
+    queryClient.invalidateQueries({ queryKey: ["predictions"] });
+    queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+    queryClient.invalidateQueries({ queryKey: ["tournament-leaderboard"] });
+  };
+
+  const draftFor = (userId: string) => {
+    const existing = byUser.get(userId);
+    return (
+      drafts[userId] ?? {
+        winner: existing?.predicted_winner ?? "",
+        a: existing ? String(existing.score_a) : "",
+        b: existing ? String(existing.score_b) : "",
+      }
+    );
+  };
+
+  const setDraft = (userId: string, patch: Partial<{ winner: string; a: string; b: string }>) =>
+    setDrafts((d) => ({ ...d, [userId]: { ...draftFor(userId), ...patch } }));
+
+  const save = useMutation({
+    mutationFn: async (userId: string) => {
+      const d = draftFor(userId);
+      if (!d.winner) throw new Error("Pick a winner");
+      if (d.a === "" || d.b === "") throw new Error("Enter both scores");
+      const sa = Number(d.a);
+      const sb = Number(d.b);
+      if (sa === sb) throw new Error("A darts match can't end level");
+      const { error } = await supabase.from("predictions").upsert(
+        {
+          match_id: match.id,
+          user_id: userId,
+          predicted_winner: d.winner,
+          score_a: sa,
+          score_b: sb,
+        },
+        { onConflict: "match_id,user_id" },
+      );
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setConfirmFor(null);
+      throwDart("Prediction saved");
+      toast.success("Prediction saved");
+      invalidate();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save prediction"),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from("predictions")
+        .delete()
+        .eq("match_id", match.id)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setConfirmRemove(null);
+      setDrafts({});
+      toast.success("Prediction removed");
+      invalidate();
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not remove prediction"),
+  });
+
+  const nameOf = (userId: string) =>
+    profiles.find((p) => p.id === userId)?.display_name ?? "Player";
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="mt-3">
+      <CollapsibleTrigger className="flex w-full items-center gap-2 rounded-lg bg-secondary/40 px-3 py-2 text-left">
+        <Users className="size-4 text-accent" />
+        <span className="text-xs font-bold uppercase tracking-wide">
+          Predictions ({picks.length || 0})
+        </span>
+        <ChevronDown
+          className={`ml-auto size-4 transition-transform ${open ? "rotate-180" : ""}`}
+        />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2 space-y-2">
+        <p className="text-xs text-muted-foreground">
+          Add or correct anyone's pick, even for a match that's already been played. Points update
+          straight away.
+        </p>
+        {profiles.map((p) => {
+          const d = draftFor(p.id);
+          const existing = byUser.get(p.id);
+          return (
+            <div key={p.id} className="rounded-lg bg-secondary/30 p-3">
+              <div className="flex items-center gap-2">
+                <p className="truncate text-sm font-semibold">{p.display_name}</p>
+                {!existing && (
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                    No pick
+                  </span>
+                )}
+                {existing && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="ml-auto text-destructive"
+                    aria-label={`Remove ${p.display_name}'s prediction`}
+                    onClick={() => setConfirmRemove(p.id)}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                )}
+              </div>
+              <div className="mt-2 space-y-2">
+                <Select value={d.winner} onValueChange={(v) => setDraft(p.id, { winner: v })}>
+                  <SelectTrigger className="h-10 w-full" aria-label={`Winner for ${p.display_name}`}>
+                    <SelectValue placeholder="Winner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={match.player_a}>{match.player_a}</SelectItem>
+                    <SelectItem value={match.player_b}>{match.player_b}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Input
+                    inputMode="numeric"
+                    className="h-10 w-14 text-center font-display text-lg"
+                    value={d.a}
+                    aria-label={`${match.player_a} score for ${p.display_name}`}
+                    onChange={(e) =>
+                      setDraft(p.id, { a: e.target.value.replace(/\D/g, "").slice(0, 2) })
+                    }
+                  />
+                  <span className="text-muted-foreground">–</span>
+                  <Input
+                    inputMode="numeric"
+                    className="h-10 w-14 text-center font-display text-lg"
+                    value={d.b}
+                    aria-label={`${match.player_b} score for ${p.display_name}`}
+                    onChange={(e) =>
+                      setDraft(p.id, { b: e.target.value.replace(/\D/g, "").slice(0, 2) })
+                    }
+                  />
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                    {matchFormatLabel(match)}
+                  </span>
+                  <Button
+                    className="ml-auto h-10 font-bold uppercase"
+                    onClick={() => setConfirmFor(p.id)}
+                    disabled={save.isPending}
+                  >
+                    Save
+                  </Button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </CollapsibleContent>
+
+      <ConfirmDialog
+        open={confirmFor !== null}
+        onOpenChange={(o) => !o && setConfirmFor(null)}
+        title="Save this prediction?"
+        description={
+          confirmFor
+            ? `${nameOf(confirmFor)}: ${draftFor(confirmFor).winner || "?"} to win, ${
+                draftFor(confirmFor).a || "?"
+              }–${draftFor(confirmFor).b || "?"} in ${matchFormatLabel(match).toLowerCase()}.`
+            : ""
+        }
+        onConfirm={() => confirmFor && save.mutate(confirmFor)}
+      />
+      <ConfirmDialog
+        open={confirmRemove !== null}
+        onOpenChange={(o) => !o && setConfirmRemove(null)}
+        title="Remove this prediction?"
+        description={
+          confirmRemove
+            ? `${nameOf(confirmRemove)}'s pick on this fixture will be deleted and their points recalculated.`
+            : ""
+        }
+        onConfirm={() => confirmRemove && remove.mutate(confirmRemove)}
+      />
+    </Collapsible>
+  );
+}
