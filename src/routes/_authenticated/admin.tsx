@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Lock, Pencil, RotateCcw, Trash2, Unlock } from "lucide-react";
+import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
@@ -239,7 +239,7 @@ function AdminPage() {
                 {g.name} · {g.matches.length}
               </h3>
               {g.matches.map((m) => (
-                <div key={m.id} className="opacity-80 transition hover:opacity-100">
+                <div key={m.id}>
                   <ResultForm match={m} />
                 </div>
               ))}
@@ -548,11 +548,12 @@ function ResultForm({ match }: { match: Match }) {
             <button
               type="button"
               onClick={() => setConfirmOverride(true)}
-              className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
+              className="flex items-center gap-1 rounded-full bg-secondary px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-accent"
             >
-              <Lock className="size-3" /> Locked
+              <Unlock className="size-3" /> Fix error
             </button>
           ) : (
+
             <>
               {started && (
                 <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-accent">
@@ -652,10 +653,12 @@ function ResultForm({ match }: { match: Match }) {
 
       {locked && (
         <p className="mt-2 text-xs text-muted-foreground">
-          This fixture has started — details are locked. Tap “Locked” to override if there's a clear
-          error. You can still enter the final score.
+          {match.status === "finished"
+            ? "This one's in the archive. Tap “Fix error” to correct the players, competition, date, score — or to re-open or remove it."
+            : "This fixture has thrown off. Tap “Fix error” to correct the details, or just enter the final score below."}
         </p>
       )}
+
 
 
       <div className="mt-3 flex items-center gap-2">
@@ -711,8 +714,9 @@ function ResultForm({ match }: { match: Match }) {
       <ConfirmDialog
         open={confirmOverride}
         onOpenChange={setConfirmOverride}
-        title="Unlock this started fixture?"
-        description="Admin override: you'll be able to edit or delete a fixture that has already thrown off. Only do this to correct a clear and obvious error."
+        title="Fix a clear error?"
+        description="You'll be able to edit, re-open or delete this fixture even though it has already been played. Only do this to correct a clear and obvious error."
+
         onConfirm={() => {
           setOverride(true);
           setConfirmOverride(false);
