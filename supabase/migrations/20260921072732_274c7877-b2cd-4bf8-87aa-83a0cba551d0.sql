@@ -1,0 +1,1 @@
+CREATE POLICY "admins read all predictions" ON public.predictions FOR SELECT TO authenticated USING (has_role(auth.uid(), 'admin'::app_role));
