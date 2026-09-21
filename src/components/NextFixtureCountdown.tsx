@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { CountryFlag } from "@/components/CountryFlag";
-import { formatDate, matchFormatLabel, nextPdcEvent, type Match } from "@/lib/league";
+import { getNextDartsEvent } from "@/lib/sportradar.functions";
+import { formatDate, matchFormatLabel, type Match } from "@/lib/league";
+
 
 function parts(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
@@ -16,6 +20,14 @@ function parts(ms: number) {
 /** Live countdown panel to the next fixture that hasn't thrown off yet. */
 export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
   const [now, setNow] = useState(() => Date.now());
+  const fetchNextEvent = useServerFn(getNextDartsEvent);
+
+  const { data: liveEvent } = useQuery({
+    queryKey: ["next-darts-event"],
+    queryFn: () => fetchNextEvent(),
+    staleTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
@@ -27,8 +39,7 @@ export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at))[0];
 
   if (!next) {
-    const event = nextPdcEvent(now);
-    if (!event) {
+    if (!liveEvent) {
       return (
         <section className="panel p-4">
           <div className="flex items-center gap-2">
@@ -42,7 +53,7 @@ export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
       );
     }
 
-    const t = parts(new Date(event.startsAt).getTime() - now);
+    const t = parts(new Date(liveEvent.startsAt).getTime() - now);
     return (
       <section className="panel p-4">
         <div className="flex items-center gap-2">
@@ -50,11 +61,12 @@ export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
           <h2 className="font-display text-xl font-bold uppercase">Next competition</h2>
         </div>
         <p className="mt-2 flex items-center gap-1.5 font-display text-lg font-bold uppercase">
-          <CountryFlag code={event.country} />
-          <span className="truncate">{event.name}</span>
+          <CountryFlag code={liveEvent.country} tournament={liveEvent.name} />
+          <span className="truncate">{liveEvent.name}</span>
         </p>
         <p className="text-xs text-muted-foreground">
-          {formatDate(event.startsAt)} · no fixtures added yet
+          {formatDate(liveEvent.startsAt)}
+          {liveEvent.venue ? ` · ${liveEvent.venue}` : " · no fixtures added yet"}
         </p>
         <div className="mt-3 grid grid-cols-4 gap-2">
           <Unit value={t.days} label="Days" />
@@ -65,6 +77,8 @@ export function NextFixtureCountdown({ matches }: { matches: Match[] }) {
       </section>
     );
   }
+
+
 
   const { days, hours, mins, secs } = parts(new Date(next.starts_at).getTime() - now);
 
