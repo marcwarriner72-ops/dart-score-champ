@@ -142,7 +142,7 @@ export const getNextDartsEvent = createServerFn({ method: "GET" }).handler(
 
       const now = Date.now();
       const upcoming = events
-        .map((e) => {
+        .map((e): LiveEvent | null => {
           const startsAt = startTime(e);
           const name = (e.strEvent ?? "").trim();
           if (!startsAt || !name) return null;
@@ -151,10 +151,10 @@ export const getNextDartsEvent = createServerFn({ method: "GET" }).handler(
             startsAt,
             country: countryCode(e.strCountry),
             venue: e.strVenue?.trim() || null,
-            source: "live" as const,
+            source: "live",
           };
         })
-        .filter((e): e is LiveEvent => !!e && new Date(e.startsAt).getTime() > now)
+        .filter((e): e is LiveEvent => e !== null && new Date(e.startsAt).getTime() > now)
         .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
 
       if (!upcoming.length) return fallbackEvent();
