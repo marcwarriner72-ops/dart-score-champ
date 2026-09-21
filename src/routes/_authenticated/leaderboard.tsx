@@ -6,7 +6,6 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { EmptyState } from "@/components/EmptyState";
 import { RowListSkeleton } from "@/components/Skeletons";
 import {
-  useLeaderboard,
   useProfiles,
   useSession,
   useTournamentLeaderboard,
@@ -21,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const ALL_TIME = "__all__";
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   component: LeaderboardPage,
@@ -46,8 +44,7 @@ export const Route = createFileRoute("/_authenticated/leaderboard")({
 
 function LeaderboardPage() {
   const { data: user } = useSession();
-  const { data: allTime = [], isLoading: loadingAll } = useLeaderboard();
-  const { data: perTournament = [], isLoading: loadingT } = useTournamentLeaderboard();
+  const { data: perTournament = [], isLoading } = useTournamentLeaderboard();
   const { data: tournaments = [] } = useTournaments();
   const { data: profiles = [] } = useProfiles();
   const avatarByUser = useMemo(
@@ -59,34 +56,34 @@ function LeaderboardPage() {
   const archived = tournaments.filter((t) => !t.is_active);
 
   const [selected, setSelected] = useState<string | null>(null);
-  const current = selected ?? active[0]?.tournament ?? tournaments[0]?.tournament ?? ALL_TIME;
+  const current = selected ?? active[0]?.tournament ?? tournaments[0]?.tournament ?? "";
 
-  const rows: LeaderboardRow[] = useMemo(() => {
-    if (current === ALL_TIME) return allTime;
-    return perTournament
-      .filter((r) => r.tournament === current)
-      .slice()
-      .sort((a, b) => (b.points ?? 0) - (a.points ?? 0));
-  }, [current, allTime, perTournament]);
-
-  const isLoading = loadingAll || loadingT;
+  const rows: LeaderboardRow[] = useMemo(
+    () =>
+      perTournament
+        .filter((r) => r.tournament === current)
+        .slice()
+        .sort((a, b) => (b.points ?? 0) - (a.points ?? 0)),
+    [current, perTournament],
+  );
 
   return (
     <AppShell title="Table" subtitle="Standings reset each tournament">
-      <Select value={current} onValueChange={setSelected}>
-        <SelectTrigger className="h-11 w-full">
-          <SelectValue placeholder="Choose a tournament" />
-        </SelectTrigger>
-        <SelectContent>
-          {tournaments.map((t) => (
-            <SelectItem key={t.tournament} value={t.tournament}>
-              {t.tournament}
-              {t.is_active ? " · live" : " · finished"}
-            </SelectItem>
-          ))}
-          <SelectItem value={ALL_TIME}>All time</SelectItem>
-        </SelectContent>
-      </Select>
+      {tournaments.length > 0 && (
+        <Select value={current} onValueChange={setSelected}>
+          <SelectTrigger className="h-11 w-full">
+            <SelectValue placeholder="Choose a tournament" />
+          </SelectTrigger>
+          <SelectContent>
+            {tournaments.map((t) => (
+              <SelectItem key={t.tournament} value={t.tournament}>
+                {t.tournament}
+                {t.is_active ? " · live" : " · finished"}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <div className="mt-4">
         {isLoading ? (
