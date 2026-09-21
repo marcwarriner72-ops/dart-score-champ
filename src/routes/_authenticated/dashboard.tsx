@@ -1,13 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Target, Trophy, ListChecks } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
+import { useMemo } from "react";
 import {
   formatDate,
   predictionPoints,
-  useLeaderboard,
   useMatches,
   useMyPredictions,
   useSession,
+  useTournamentLeaderboard,
+  useTournaments,
 } from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { NextFixtureCountdown } from "@/components/NextFixtureCountdown";
