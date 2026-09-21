@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { CountryFlag } from "@/components/CountryFlag";
-import { formatDate, matchFormatLabel, nextPdcEvent, type Match } from "@/lib/league";
+import { getNextDartsEvent } from "@/lib/sportradar.functions";
+import { formatDate, matchFormatLabel, type Match } from "@/lib/league";
+
 
 function parts(ms: number) {
   const total = Math.max(0, Math.floor(ms / 1000));
