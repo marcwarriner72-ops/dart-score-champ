@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Lock, Pencil, RotateCcw, Trash2, Unlock } from "lucide-react";
+import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
@@ -653,10 +653,12 @@ function ResultForm({ match }: { match: Match }) {
 
       {locked && (
         <p className="mt-2 text-xs text-muted-foreground">
-          This fixture has started — details are locked. Tap “Locked” to override if there's a clear
-          error. You can still enter the final score.
+          {match.status === "finished"
+            ? "This one's in the archive. Tap “Fix error” to correct the players, competition, date, score — or to re-open or remove it."
+            : "This fixture has thrown off. Tap “Fix error” to correct the details, or just enter the final score below."}
         </p>
       )}
+
 
 
       <div className="mt-3 flex items-center gap-2">
