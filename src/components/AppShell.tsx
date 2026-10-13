@@ -69,55 +69,73 @@ export function AppShell({
 
       <main className="flex-1 px-4 pb-32 pt-4">{children}</main>
 
-      <nav
-        aria-label="Main"
-        className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-20 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 rounded-full border border-border/70 bg-card/80 p-1.5 shadow-[var(--shadow-panel)] backdrop-blur-xl"
-      >
-        <div className="grid grid-cols-6 gap-0.5">
-          <NavItem to="/dashboard" icon={<Target className="size-5" />} label="Home" />
-          <NavItem to="/predict" icon={<ListChecks className="size-5" />} label="Predict" badge={toPredict} />
-          <NavItem to="/results" icon={<Archive className="size-5" />} label="Results" />
-          <NavItem to="/chat" icon={<MessageCircle className="size-5" />} label="Chat" />
-          <NavItem to="/leaderboard" icon={<Trophy className="size-5" />} label="Table" />
-          {isAdmin ? (
-            <NavItem to="/admin" icon={<Shield className="size-5" />} label="Admin" />
-          ) : (
-            <NavItem to="/rules" icon={<Shield className="size-5" />} label="Rules" />
-          )}
-        </div>
-      </nav>
+      <DockNav isAdmin={!!isAdmin} toPredict={toPredict} />
     </div>
   );
 }
 
-function NavItem({
-  to,
-  icon,
-  label,
-  badge,
-}: {
-  to: string;
-  icon: ReactNode;
-  label: string;
-  badge?: number;
-}) {
+function DockNav({ isAdmin, toPredict }: { isAdmin: boolean; toPredict: number }) {
+  const [open, setOpen] = useState(false);
+
+  const items = [
+    { to: "/dashboard", icon: <Target className="size-5" />, label: "Home" },
+    { to: "/predict", icon: <ListChecks className="size-5" />, label: "Predict", badge: toPredict },
+    { to: "/results", icon: <Archive className="size-5" />, label: "Results" },
+    { to: "/chat", icon: <MessageCircle className="size-5" />, label: "Chat" },
+    { to: "/leaderboard", icon: <Trophy className="size-5" />, label: "Table" },
+    isAdmin
+      ? { to: "/admin", icon: <Shield className="size-5" />, label: "Admin" }
+      : { to: "/rules", icon: <Shield className="size-5" />, label: "Rules" },
+  ];
+
   return (
-    <Link
-      to={to}
-      className="relative flex flex-col items-center gap-0.5 rounded-full py-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground transition-all duration-200 active:scale-90"
-      activeProps={{
-        className: "bg-gold/15 text-gold shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--gold)_35%,transparent)]",
-      }}
+    <nav
+      aria-label="Main"
+      className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-3 z-20 flex flex-col-reverse items-start gap-2"
     >
-      <span className="relative">
-        {icon}
-        {badge ? (
-          <span className="absolute -right-2.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-accent-foreground ring-2 ring-card">
-            {badge > 9 ? "9+" : badge}
+      <button
+        type="button"
+        aria-label={open ? "Close menu" : "Open menu"}
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="relative flex size-14 items-center justify-center rounded-full border border-border/70 bg-card/85 text-foreground shadow-[var(--shadow-panel)] backdrop-blur-xl transition-transform duration-200 active:scale-90"
+      >
+        {open ? <X className="size-6" /> : <Menu className="size-6" />}
+        {!open && toPredict > 0 ? (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold leading-none text-accent-foreground ring-2 ring-card">
+            {toPredict > 9 ? "9+" : toPredict}
           </span>
         ) : null}
-      </span>
-      {label}
-    </Link>
+      </button>
+
+      {items.map((item, i) => (
+        <Link
+          key={item.to}
+          to={item.to}
+          onClick={() => setOpen(false)}
+          aria-hidden={!open}
+          tabIndex={open ? 0 : -1}
+          style={{ transitionDelay: open ? `${i * 35}ms` : "0ms" }}
+          className={`flex items-center gap-2.5 rounded-full border border-border/70 bg-card/85 py-2 pl-2 pr-4 shadow-[var(--shadow-panel)] backdrop-blur-xl transition-all duration-200 active:scale-90 ${
+            open
+              ? "translate-y-0 scale-100 opacity-100"
+              : "pointer-events-none translate-y-4 scale-75 opacity-0"
+          }`}
+          activeProps={{
+            className: "border-gold/50 text-gold",
+          }}
+        >
+          <span className="relative flex size-9 items-center justify-center rounded-full bg-secondary text-foreground">
+            {item.icon}
+            {item.badge ? (
+              <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[9px] font-bold leading-none text-accent-foreground ring-2 ring-card">
+                {item.badge > 9 ? "9+" : item.badge}
+              </span>
+            ) : null}
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wide">{item.label}</span>
+        </Link>
+      ))}
+    </nav>
   );
 }
