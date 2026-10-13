@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Archive, Trophy } from "lucide-react";
+import { playCheer } from "@/lib/sound";
 import { AppShell } from "@/components/AppShell";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { EmptyState } from "@/components/EmptyState";
@@ -83,6 +84,21 @@ function LeaderboardPage() {
             ))}
           </SelectContent>
         </Select>
+      )}
+
+      {rows.length > 0 && (
+        <button
+          type="button"
+          onClick={playCheer}
+          className="chalkboard mt-4 w-full rounded-xl p-4 text-left"
+          aria-label="Play crowd cheer"
+        >
+          <p className="font-display text-xs uppercase tracking-[0.3em] opacity-70">Tonight's leader</p>
+          <p className="chalk-text font-display text-3xl font-bold uppercase">
+            {profileName(rows[0].user_id)}
+          </p>
+          <p className="font-display text-lg text-accent">{rows[0].points ?? 0} pts · 𝍸𝍸</p>
+        </button>
       )}
 
       <div className="mt-4">

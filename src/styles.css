@@ -106,6 +106,21 @@
   backdrop-filter: blur(6px);
 }
 
+@utility chalkboard {
+  color: color-mix(in oklab, var(--foreground) 92%, transparent);
+  background:
+    radial-gradient(ellipse at 30% 20%, color-mix(in oklab, var(--foreground) 6%, transparent), transparent 60%),
+    repeating-linear-gradient(115deg, color-mix(in oklab, var(--foreground) 2%, transparent) 0 2px, transparent 2px 6px),
+    color-mix(in oklab, var(--background) 70%, var(--primary) 12%);
+  border: 6px solid color-mix(in oklab, var(--accent) 45%, var(--background));
+  box-shadow: inset 0 0 24px color-mix(in oklab, var(--background) 80%, transparent), var(--shadow-panel);
+}
+
+@utility chalk-text {
+  text-shadow: 0 0 2px color-mix(in oklab, var(--foreground) 50%, transparent);
+  letter-spacing: 0.04em;
+}
+
 @utility text-gradient-gold {
   background: var(--gradient-gold);
   -webkit-background-clip: text;
