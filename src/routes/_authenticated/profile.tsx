@@ -317,8 +317,35 @@ function ProfilePage() {
       </section>
 
       <ReminderSettings />
+      <SoundSettings />
     </AppShell>
 
+  );
+}
+
+/** Pub sounds + vibration on this device. */
+function SoundSettings() {
+  const [on, setOn] = useState(true);
+  useEffect(() => setOn(soundEnabled()), []);
+  return (
+    <section className="panel mt-4 flex items-start gap-3 p-4">
+      <Volume2 className="mt-1 size-5 shrink-0 text-accent" />
+      <div className="min-w-0 flex-1">
+        <h2 className="font-display text-xl font-bold uppercase">Pub sounds</h2>
+        <p className="text-xs text-muted-foreground">
+          Board thwack when your dart lands, and a crowd cheer on the leaderboard.
+        </p>
+      </div>
+      <Switch
+        checked={on}
+        aria-label="Pub sounds"
+        onCheckedChange={(v) => {
+          setOn(v);
+          setSoundEnabled(v);
+          if (v) playThwack();
+        }}
+      />
+    </section>
   );
 }
 

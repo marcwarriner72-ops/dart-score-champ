@@ -41,12 +41,6 @@ export function DartThrowOverlay() {
     };
   }, [shot]);
 
-  useEffect(() => {
-    if (!shot) return;
-    const t = setTimeout(() => {}, 0);
-    return () => clearTimeout(t);
-  }, [shot]);
-
   if (!shot) return null;
 
   return (
