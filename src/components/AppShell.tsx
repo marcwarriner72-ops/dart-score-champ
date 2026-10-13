@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Target, Trophy, ListChecks, Shield, MessageCircle, Archive } from "lucide-react";
-import type { ReactNode } from "react";
+import { LogOut, Target, Trophy, ListChecks, Shield, MessageCircle, Archive, Menu, X } from "lucide-react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin, useMatches, useMyPredictions, useProfile, useSession } from "@/lib/league";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
