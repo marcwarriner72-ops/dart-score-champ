@@ -95,9 +95,9 @@ function LeaderboardPage() {
         >
           <p className="font-display text-xs uppercase tracking-[0.3em] opacity-70">Tonight's leader</p>
           <p className="chalk-text font-display text-3xl font-bold uppercase">
-            {profileName(rows[0].user_id)}
+            {rows[0].display_name}
           </p>
-          <p className="font-display text-lg text-accent">{rows[0].points ?? 0} pts · 𝍸𝍸</p>
+          <p className="font-display text-lg text-accent">{rows[0].points ?? 0} pts</p>
         </button>
       )}
 
