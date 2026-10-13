@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Bell, Camera, Trash2 } from "lucide-react";
+import { Bell, Camera, Trash2, Volume2 } from "lucide-react";
+import { playThwack, setSoundEnabled, soundEnabled } from "@/lib/sound";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
@@ -317,8 +318,35 @@ function ProfilePage() {
       </section>
 
       <ReminderSettings />
+      <SoundSettings />
     </AppShell>
 
+  );
+}
+
+/** Pub sounds + vibration on this device. */
+function SoundSettings() {
+  const [on, setOn] = useState(true);
+  useEffect(() => setOn(soundEnabled()), []);
+  return (
+    <section className="panel mt-4 flex items-start gap-3 p-4">
+      <Volume2 className="mt-1 size-5 shrink-0 text-accent" />
+      <div className="min-w-0 flex-1">
+        <h2 className="font-display text-xl font-bold uppercase">Pub sounds</h2>
+        <p className="text-xs text-muted-foreground">
+          Board thwack when your dart lands, and a crowd cheer on the leaderboard.
+        </p>
+      </div>
+      <Switch
+        checked={on}
+        aria-label="Pub sounds"
+        onCheckedChange={(v) => {
+          setOn(v);
+          setSoundEnabled(v);
+          if (v) playThwack();
+        }}
+      />
+    </section>
   );
 }
 

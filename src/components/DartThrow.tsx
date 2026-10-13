@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { playThwack } from "@/lib/sound";
 
 const EVENT = "darts:throw";
 
@@ -21,7 +22,7 @@ export function DartThrowOverlay() {
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     function onThrow(e: Event) {
-      if (reduced) return;
+      if (reduced) return playThwack();
       const label = (e as CustomEvent<{ label?: string }>).detail?.label ?? "Saved";
       setShot({ id: Date.now(), label });
     }
@@ -32,8 +33,12 @@ export function DartThrowOverlay() {
 
   useEffect(() => {
     if (!shot) return;
+    const hit = setTimeout(playThwack, 550);
     const t = setTimeout(() => setShot(null), 1250);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(hit);
+      clearTimeout(t);
+    };
   }, [shot]);
 
   if (!shot) return null;
