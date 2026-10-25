@@ -2,10 +2,14 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Pencil, RefreshCw, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
+import { ChevronDown, Pencil, RefreshCw, RotateCcw, Search, Trash2, Unlock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { getPastDartsScores } from "@/lib/sportsdb.functions";
+import {
+  getPastDartsScores,
+  getUpcomingSportsDbFixtures,
+  type OnlineFixture,
+} from "@/lib/sportsdb.functions";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
 import {
@@ -321,6 +325,71 @@ function AdminManager({ currentUserId }: { currentUserId: string | undefined }) 
   );
 }
 
+function toLocalInput(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function OnlineFixtureLookup({
+  initialQuery,
+  onPick,
+}: {
+  initialQuery: string;
+  onPick: (f: OnlineFixture) => void;
+}) {
+  const fetchFixtures = useServerFn(getUpcomingSportsDbFixtures);
+  const [q, setQ] = useState(initialQuery);
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["online-fixtures", "4554"],
+    queryFn: () => fetchFixtures({ data: { leagueId: "4554" } }),
+    staleTime: 10 * 60 * 1000,
+  });
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  const list = (data ?? []).filter((f) => {
+    const hay = `${f.title} ${f.playerA} ${f.playerB} ${f.tournament}`.toLowerCase();
+    return words.every((w) => hay.includes(w));
+  });
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-2">
+      <Input
+        autoFocus
+        placeholder="Filter by player or tournament"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+      />
+      <div className="max-h-64 space-y-1 overflow-y-auto">
+        {isLoading && <p className="p-2 text-xs text-muted-foreground">Loading fixtures…</p>}
+        {isError && <p className="p-2 text-xs text-destructive">Couldn't reach TheSportsDB.</p>}
+        {!isLoading && !isError && list.length === 0 && (
+          <p className="p-2 text-xs text-muted-foreground">No upcoming online fixtures match.</p>
+        )}
+        {list.map((f) => (
+          <button
+            key={f.idEvent}
+            type="button"
+            onClick={() => onPick(f)}
+            className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent active:scale-[0.99]"
+          >
+            <span className="min-w-0">
+              <span className="block truncate font-semibold">
+                {f.playerA && f.playerB ? `${f.playerA} vs ${f.playerB}` : f.title}
+              </span>
+              <span className="block text-xs text-muted-foreground">
+                {new Date(f.startsAt).toLocaleString(undefined, {
+                  dateStyle: "medium",
+                  timeStyle: "short",
+                })}
+              </span>
+            </span>
+            <span className="shrink-0 text-xs text-muted-foreground">#{f.idEvent}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function NewMatchForm() {
   const queryClient = useQueryClient();
   const [playerA, setPlayerA] = useState("");
@@ -331,6 +400,7 @@ function NewMatchForm() {
   const [country, setCountry] = useState("GB");
   const [externalId, setExternalId] = useState("");
   const [confirming, setConfirming] = useState(false);
+  const [lookupOpen, setLookupOpen] = useState(false);
 
   /** Picking a known competition pre-fills its host country. */
   function pickTournament(v: string) {
@@ -397,7 +467,34 @@ function NewMatchForm() {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="extid">TheSportsDB Event ID (optional)</Label>
+        <div className="flex items-center justify-between gap-2">
+          <Label htmlFor="extid">TheSportsDB Event ID (optional)</Label>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="h-7 gap-1 px-2 text-xs"
+            onClick={() => setLookupOpen((v) => !v)}
+          >
+            <Search className="h-3.5 w-3.5" />
+            Search Online Fixtures
+          </Button>
+        </div>
+        {lookupOpen && (
+          <OnlineFixtureLookup
+            initialQuery={tournament || playerA || playerB}
+            onPick={(f) => {
+              if (f.playerA) setPlayerA(f.playerA);
+              if (f.playerB) setPlayerB(f.playerB);
+              if (f.tournament) pickTournament(f.tournament);
+              if (f.country) setCountry(f.country);
+              setStartsAt(toLocalInput(f.startsAt));
+              setExternalId(f.idEvent);
+              setLookupOpen(false);
+              toast.success("Fixture details filled in");
+            }}
+          />
+        )}
         <Input
           id="extid"
           inputMode="numeric"
