@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           country: string | null
           created_at: string
+          external_event_id: string | null
           format: string
           id: string
           player_a: string
@@ -31,6 +32,7 @@ export type Database = {
         Insert: {
           country?: string | null
           created_at?: string
+          external_event_id?: string | null
           format?: string
           id?: string
           player_a: string
@@ -44,6 +46,7 @@ export type Database = {
         Update: {
           country?: string | null
           created_at?: string
+          external_event_id?: string | null
           format?: string
           id?: string
           player_a?: string
