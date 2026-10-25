@@ -216,3 +216,80 @@ export const getPastDartsScores = createServerFn({ method: "POST" })
     }
     return out;
   });
+
+/** An upcoming online fixture for the admin "Search Online Fixtures" lookup. */
+export type OnlineFixture = {
+  idEvent: string;
+  title: string;
+  playerA: string;
+  playerB: string;
+  tournament: string;
+  startsAt: string;
+  country: string | null;
+};
+
+export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
+  .inputValidator((input: { leagueId?: string } | undefined) => ({
+    leagueId: /^\d+$/.test(input?.leagueId ?? "") ? input!.leagueId! : "4554",
+  }))
+  .handler(async ({ data }): Promise<OnlineFixture[]> => {
+    const key = process.env["THESPORTSDB_API_KEY"] ?? "123";
+    const base = `https://www.thesportsdb.com/api/v1/json/${key}`;
+    type Ev = SportsDbEvent & {
+      idEvent?: string | null;
+      strHomeTeam?: string | null;
+      strAwayTeam?: string | null;
+    };
+    const get = async (path: string): Promise<Ev[]> => {
+      try {
+        const res = await fetch(`${base}${path}`);
+        if (!res.ok) return [];
+        const json = (await res.json()) as { events?: Ev[] | null };
+        return json.events ?? [];
+      } catch {
+        return [];
+      }
+    };
+    let events = await get(`/eventsnextleague.php?id=${data.leagueId}`);
+    if (!events.length) {
+      const y = new Date().getUTCFullYear();
+      events = [
+        ...(await get(`/eventsseason.php?id=${data.leagueId}&s=${y}`)),
+        ...(await get(`/eventsseason.php?id=${data.leagueId}&s=${y + 1}`)),
+      ];
+    }
+    const now = Date.now() - 24 * 60 * 60 * 1000;
+    const seen = new Set<string>();
+    const out: OnlineFixture[] = [];
+    for (const e of events) {
+      const id = e.idEvent ? String(e.idEvent) : "";
+      const startsAt = startTime(e);
+      const title = (e.strEvent ?? "").trim();
+      if (!id || !startsAt || !title || seen.has(id)) continue;
+      if (new Date(startsAt).getTime() < now) continue;
+      seen.add(id);
+      let a = (e.strHomeTeam ?? "").trim();
+      let b = (e.strAwayTeam ?? "").trim();
+      if (!a || !b) {
+        const m = title.match(/^(.+?)\s+(?:vs?\.?|v)\s+(.+)$/i);
+        if (m) {
+          a = m[1]!.trim();
+          b = m[2]!.trim();
+        }
+      }
+      const tournament = title
+        .replace(/\s+(day|night|round)\s+\d+$/i, "")
+        .replace(/\s{2,}/g, " ")
+        .trim();
+      out.push({
+        idEvent: id,
+        title,
+        playerA: a,
+        playerB: b,
+        tournament: a && b ? "" : tournament,
+        startsAt,
+        country: countryCode(e.strCountry),
+      });
+    }
+    return out.sort((x, y) => x.startsAt.localeCompare(y.startsAt)).slice(0, 100);
+  });
