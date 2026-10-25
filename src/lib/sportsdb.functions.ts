@@ -250,15 +250,13 @@ export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
         return [];
       }
     };
-    let events = await get(`/eventsnextleague.php?id=${data.leagueId}`);
-    if (!events.length) {
-      const y = new Date().getUTCFullYear();
-      events = [
-        ...(await get(`/eventsseason.php?id=${data.leagueId}&s=${y}`)),
-        ...(await get(`/eventsseason.php?id=${data.leagueId}&s=${y + 1}`)),
-      ];
+    const y = new Date().getUTCFullYear() || 2026;
+    let events = await get(`/eventsseason.php?id=${data.leagueId}&s=${y}`);
+    if (!events.length && y !== 2026) {
+      events = await get(`/eventsseason.php?id=${data.leagueId}&s=2026`);
     }
-    const now = Date.now() - 24 * 60 * 60 * 1000;
+    const today = Date.now();
+    const scored = new Set<string>();
     const seen = new Set<string>();
     const out: OnlineFixture[] = [];
     for (const e of events) {
@@ -266,8 +264,9 @@ export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
       const startsAt = startTime(e);
       const title = (e.strEvent ?? "").trim();
       if (!id || !startsAt || !title || seen.has(id)) continue;
-      if (new Date(startsAt).getTime() < now) continue;
       seen.add(id);
+      const raw = e as Record<string, unknown>;
+      if (raw.intHomeScore != null && raw.intAwayScore != null) scored.add(id);
       let a = (e.strHomeTeam ?? "").trim();
       let b = (e.strAwayTeam ?? "").trim();
       if (!a || !b) {
