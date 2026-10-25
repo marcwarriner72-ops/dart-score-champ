@@ -266,7 +266,7 @@ export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
       if (!id || !startsAt || !title || seen.has(id)) continue;
       seen.add(id);
       const raw = e as Record<string, unknown>;
-      if (raw.intHomeScore != null && raw.intAwayScore != null) scored.add(id);
+      if (raw["intHomeScore"] != null && raw["intAwayScore"] != null) scored.add(id);
       let a = (e.strHomeTeam ?? "").trim();
       let b = (e.strAwayTeam ?? "").trim();
       if (!a || !b) {
