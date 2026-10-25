@@ -375,7 +375,11 @@ function OnlineFixtureLookup({
           <button
             key={f.idEvent}
             type="button"
-            onClick={() => onPick(f)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPick(f);
+            }}
             className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent active:scale-[0.99]"
           >
             <span className="min-w-0">
@@ -502,8 +506,8 @@ function NewMatchForm() {
               <OnlineFixtureLookup
                 initialQuery={playerA || playerB}
                 onPick={(f) => {
-                  if (f.playerA) setPlayerA(f.playerA);
-                  if (f.playerB) setPlayerB(f.playerB);
+                  setPlayerA(f.playerA || f.title.split(/\s+vs\.?\s+/i)[0] || "");
+                  setPlayerB(f.playerB || f.title.split(/\s+vs\.?\s+/i)[1] || "");
                   if (f.tournament) pickTournament(f.tournament);
                   if (f.country) setCountry(f.country);
                   setStartsAt(toLocalInput(f.startsAt));
