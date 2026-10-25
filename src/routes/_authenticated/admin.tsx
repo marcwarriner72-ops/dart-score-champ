@@ -361,7 +361,12 @@ function OnlineFixtureLookup({
         onChange={(e) => setQ(e.target.value)}
       />
       <div className="max-h-64 space-y-1 overflow-y-auto">
-        {isLoading && <p className="p-2 text-xs text-muted-foreground">Loading fixtures…</p>}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
+            Loading fixtures…
+          </div>
+        )}
         {isError && <p className="p-2 text-xs text-destructive">Couldn't reach TheSportsDB.</p>}
         {!isLoading && !isError && list.length === 0 && (
           <p className="p-2 text-xs text-muted-foreground">No upcoming online fixtures match.</p>
@@ -477,7 +482,11 @@ function NewMatchForm() {
             size="sm"
             variant="outline"
             className="h-7 gap-1 px-2 text-xs"
-            onClick={() => setLookupOpen((v) => !v)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setLookupOpen(true);
+            }}
           >
             <Search className="h-3.5 w-3.5" />
             Search Online Fixtures
