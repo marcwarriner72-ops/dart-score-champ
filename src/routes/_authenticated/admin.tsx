@@ -447,6 +447,7 @@ function ResultForm({ match }: { match: Match }) {
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
   const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
+  const [externalId, setExternalId] = useState(match.external_event_id ?? "");
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -499,6 +500,7 @@ function ResultForm({ match }: { match: Match }) {
           starts_at: new Date(startsAt).toISOString(),
           format,
           country,
+          external_event_id: externalId.trim() || null,
         })
         .eq("id", match.id);
       if (error) throw error;
