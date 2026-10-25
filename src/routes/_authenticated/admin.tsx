@@ -447,6 +447,7 @@ function ResultForm({ match }: { match: Match }) {
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
   const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
+  const [externalId, setExternalId] = useState(match.external_event_id ?? "");
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -499,6 +500,7 @@ function ResultForm({ match }: { match: Match }) {
           starts_at: new Date(startsAt).toISOString(),
           format,
           country,
+          external_event_id: externalId.trim() || null,
         })
         .eq("id", match.id);
       if (error) throw error;
@@ -634,6 +636,18 @@ function ResultForm({ match }: { match: Match }) {
           <FormatPicker id={`format-${match.id}`} value={format} onChange={setFormat} />
 
           <div className="space-y-1.5">
+            <Label htmlFor={`extid-${match.id}`}>TheSportsDB Event ID (optional)</Label>
+            <Input
+              id={`extid-${match.id}`}
+              inputMode="numeric"
+              placeholder="e.g. 2619969"
+              value={externalId}
+              onChange={(e) => setExternalId(e.target.value)}
+            />
+          </div>
+
+
+          <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
             <Input
               id={`when-${match.id}`}
@@ -651,6 +665,7 @@ function ResultForm({ match }: { match: Match }) {
                 setPlayerB(match.player_b);
                 setTournament(match.tournament ?? "");
                 setStartsAt(toLocalInput(match.starts_at));
+                setExternalId(match.external_event_id ?? "");
                 setEditing(false);
               }}
             >

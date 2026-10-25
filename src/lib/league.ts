@@ -12,6 +12,7 @@ export type Match = {
   score_b: number | null;
   format?: string | null;
   country?: string | null;
+  external_event_id?: string | null;
 };
 
 /** Preset PDC World Series events offered in the admin tournament dropdown. */
