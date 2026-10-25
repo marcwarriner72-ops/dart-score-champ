@@ -172,3 +172,47 @@ export const getNextDartsEvent = createServerFn({ method: "GET" }).handler(
     }
   },
 );
+
+/** Finished-event scores keyed by TheSportsDB idEvent, for the admin "Fetch Latest Results" sync. */
+export type PastScore = { idEvent: string; home: number; away: number };
+
+export const getPastDartsScores = createServerFn({ method: "POST" })
+  .inputValidator((input: { ids: string[] }) => ({
+    ids: (input.ids ?? []).map((s) => String(s).trim()).filter(Boolean).slice(0, 200),
+  }))
+  .handler(async ({ data }): Promise<PastScore[]> => {
+    const key = process.env["THESPORTSDB_API_KEY"] ?? "123";
+    const base = `https://www.thesportsdb.com/api/v1/json/${key}`;
+    type Ev = { idEvent?: string | null; intHomeScore?: string | null; intAwayScore?: string | null };
+    const found = new Map<string, Ev>();
+    try {
+      const res = await fetch(`${base}/eventspastleague.php?id=4554`);
+      if (res.ok) {
+        const json = (await res.json()) as { events?: Ev[] | null };
+        for (const e of json.events ?? []) if (e.idEvent) found.set(String(e.idEvent), e);
+      }
+    } catch (error) {
+      console.error("TheSportsDB past events failed", error);
+    }
+    // Look up any saved IDs the past-league list didn't include.
+    for (const id of data.ids.filter((i) => !found.has(i))) {
+      try {
+        const res = await fetch(`${base}/lookupevent.php?id=${encodeURIComponent(id)}`);
+        if (!res.ok) continue;
+        const json = (await res.json()) as { events?: Ev[] | null };
+        const e = json.events?.[0];
+        if (e?.idEvent) found.set(String(e.idEvent), e);
+      } catch {
+        /* skip */
+      }
+    }
+    const out: PastScore[] = [];
+    for (const id of data.ids) {
+      const e = found.get(id);
+      if (!e || e.intHomeScore == null || e.intAwayScore == null) continue;
+      const home = Number(e.intHomeScore);
+      const away = Number(e.intAwayScore);
+      if (Number.isFinite(home) && Number.isFinite(away)) out.push({ idEvent: id, home, away });
+    }
+    return out;
+  });

@@ -2,8 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
+import { ChevronDown, Pencil, RefreshCw, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getPastDartsScores } from "@/lib/sportsdb.functions";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
 import {
@@ -204,6 +206,7 @@ function AdminPage() {
   return (
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
+      <SyncResultsButton />
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
       <p className="text-xs text-muted-foreground">
@@ -326,6 +329,7 @@ function NewMatchForm() {
   const [startsAt, setStartsAt] = useState("");
   const [format, setFormat] = useState("legs");
   const [country, setCountry] = useState("GB");
+  const [externalId, setExternalId] = useState("");
   const [confirming, setConfirming] = useState(false);
 
   /** Picking a known competition pre-fills its host country. */
@@ -346,11 +350,13 @@ function NewMatchForm() {
         starts_at: new Date(startsAt).toISOString(),
         format,
         country,
+        external_event_id: externalId.trim() || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Match added");
+      setExternalId("");
       setPlayerA("");
       setPlayerB("");
       setTournament("");
@@ -388,6 +394,16 @@ function NewMatchForm() {
           type="datetime-local"
           value={startsAt}
           onChange={(e) => setStartsAt(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1.5">
+        <Label htmlFor="extid">TheSportsDB Event ID (optional)</Label>
+        <Input
+          id="extid"
+          inputMode="numeric"
+          placeholder="e.g. 2619969"
+          value={externalId}
+          onChange={(e) => setExternalId(e.target.value)}
         />
       </div>
       <Button
@@ -1014,5 +1030,58 @@ function AdminPredictions({ match }: { match: Match }) {
         onConfirm={() => confirmRemove && remove.mutate(confirmRemove)}
       />
     </Collapsible>
+  );
+}
+
+/** Pulls finished scores from TheSportsDB for fixtures with a saved event ID. Only score_a/score_b are written. */
+function SyncResultsButton() {
+  const queryClient = useQueryClient();
+  const fetchScores = useServerFn(getPastDartsScores);
+  const sync = useMutation({
+    mutationFn: async () => {
+      const { data: rows, error } = await supabase
+        .from("matches")
+        .select("id, external_event_id, score_a, score_b")
+        .not("external_event_id", "is", null);
+      if (error) throw error;
+      const linked = (rows ?? []).filter((r) => r.external_event_id?.trim());
+      if (!linked.length) return { updated: 0, linked: 0 };
+      const scores = await fetchScores({
+        data: { ids: linked.map((r) => r.external_event_id!.trim()) },
+      });
+      const byId = new Map(scores.map((s) => [s.idEvent, s]));
+      let updated = 0;
+      for (const r of linked) {
+        const s = byId.get(r.external_event_id!.trim());
+        if (!s || (r.score_a === s.home && r.score_b === s.away)) continue;
+        const { error: e } = await supabase
+          .from("matches")
+          .update({ score_a: s.home, score_b: s.away })
+          .eq("id", r.id);
+        if (e) throw e;
+        updated++;
+      }
+      return { updated, linked: linked.length };
+    },
+    onSuccess: ({ updated, linked }) => {
+      if (!linked) toast.info("No fixtures have a TheSportsDB Event ID yet");
+      else if (!updated) toast.success("All fixtures are up to date");
+      else toast.success(`${updated} score${updated === 1 ? "" : "s"} updated from TheSportsDB`);
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
+      queryClient.invalidateQueries({ queryKey: ["tournament-leaderboard"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not fetch results"),
+  });
+  return (
+    <Button
+      variant="secondary"
+      className="mt-4 h-11 w-full font-bold uppercase"
+      onClick={() => sync.mutate()}
+      disabled={sync.isPending}
+    >
+      <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
+      {sync.isPending ? "Fetching…" : "Fetch Latest Results"}
+    </Button>
   );
 }
