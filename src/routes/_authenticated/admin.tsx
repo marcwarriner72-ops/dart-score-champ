@@ -343,7 +343,7 @@ function OnlineFixtureLookup({
   const fetchFixtures = useServerFn(getUpcomingSportsDbFixtures);
   const [q, setQ] = useState(initialQuery);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["online-fixtures", "4554"],
+    queryKey: ["online-fixtures", "4554", "season"],
     queryFn: () => fetchFixtures({ data: { leagueId: "4554" } }),
     staleTime: 10 * 60 * 1000,
   });
@@ -369,7 +369,7 @@ function OnlineFixtureLookup({
         )}
         {isError && <p className="p-2 text-xs text-destructive">Couldn't reach TheSportsDB.</p>}
         {!isLoading && !isError && list.length === 0 && (
-          <p className="p-2 text-xs text-muted-foreground">No upcoming online fixtures match.</p>
+          <p className="p-2 text-xs text-muted-foreground">No online fixtures match.</p>
         )}
         {list.map((f) => (
           <button

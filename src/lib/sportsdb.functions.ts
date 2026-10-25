@@ -290,5 +290,11 @@ export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
         country: countryCode(e.strCountry),
       });
     }
-    return out.sort((x, y) => x.startsAt.localeCompare(y.startsAt)).slice(0, 100);
+    const dist = (f: OnlineFixture) => Math.abs(new Date(f.startsAt).getTime() - today);
+    return out
+      .sort(
+        (a, b) =>
+          Number(scored.has(a.idEvent)) - Number(scored.has(b.idEvent)) || dist(a) - dist(b),
+      )
+      .slice(0, 200);
   });
