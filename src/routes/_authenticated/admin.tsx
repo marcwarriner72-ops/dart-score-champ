@@ -33,6 +33,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -368,14 +375,15 @@ function OnlineFixtureLookup({
           >
             <span className="min-w-0">
               <span className="block truncate font-semibold">
-                {f.playerA && f.playerB ? `${f.playerA} vs ${f.playerB}` : f.title}
-              </span>
-              <span className="block text-xs text-muted-foreground">
                 {new Date(f.startsAt).toLocaleString(undefined, {
                   dateStyle: "medium",
                   timeStyle: "short",
-                })}
+                })}{" "}
+                - {f.playerA && f.playerB ? `${f.playerA} vs ${f.playerB}` : f.title}
               </span>
+              {f.tournament && (
+                <span className="block truncate text-xs text-muted-foreground">{f.tournament}</span>
+              )}
             </span>
             <span className="shrink-0 text-xs text-muted-foreground">#{f.idEvent}</span>
           </button>
@@ -475,21 +483,29 @@ function NewMatchForm() {
             Search Online Fixtures
           </Button>
         </div>
-        {lookupOpen && (
-          <OnlineFixtureLookup
-            initialQuery={tournament || playerA || playerB}
-            onPick={(f) => {
-              if (f.playerA) setPlayerA(f.playerA);
-              if (f.playerB) setPlayerB(f.playerB);
-              if (f.tournament) pickTournament(f.tournament);
-              if (f.country) setCountry(f.country);
-              setStartsAt(toLocalInput(f.startsAt));
-              setExternalId(f.idEvent);
-              setLookupOpen(false);
-              toast.success("Fixture details filled in");
-            }}
-          />
-        )}
+        <Dialog open={lookupOpen} onOpenChange={setLookupOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Online PDC fixtures</DialogTitle>
+              <DialogDescription>Tap a match to fill in the form.</DialogDescription>
+            </DialogHeader>
+            {lookupOpen && (
+              <OnlineFixtureLookup
+                initialQuery={playerA || playerB}
+                onPick={(f) => {
+                  if (f.playerA) setPlayerA(f.playerA);
+                  if (f.playerB) setPlayerB(f.playerB);
+                  if (f.tournament) pickTournament(f.tournament);
+                  if (f.country) setCountry(f.country);
+                  setStartsAt(toLocalInput(f.startsAt));
+                  setExternalId(f.idEvent);
+                  setLookupOpen(false);
+                  toast.success("Fixture details filled in");
+                }}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
         <Input
           id="extid"
           inputMode="numeric"
