@@ -361,7 +361,12 @@ function OnlineFixtureLookup({
         onChange={(e) => setQ(e.target.value)}
       />
       <div className="max-h-64 space-y-1 overflow-y-auto">
-        {isLoading && <p className="p-2 text-xs text-muted-foreground">Loading fixtures…</p>}
+        {isLoading && (
+          <div className="flex flex-col items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
+            <span className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
+            Loading fixtures…
+          </div>
+        )}
         {isError && <p className="p-2 text-xs text-destructive">Couldn't reach TheSportsDB.</p>}
         {!isLoading && !isError && list.length === 0 && (
           <p className="p-2 text-xs text-muted-foreground">No upcoming online fixtures match.</p>
@@ -370,7 +375,11 @@ function OnlineFixtureLookup({
           <button
             key={f.idEvent}
             type="button"
-            onClick={() => onPick(f)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onPick(f);
+            }}
             className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent active:scale-[0.99]"
           >
             <span className="min-w-0">
@@ -477,7 +486,11 @@ function NewMatchForm() {
             size="sm"
             variant="outline"
             className="h-7 gap-1 px-2 text-xs"
-            onClick={() => setLookupOpen((v) => !v)}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setLookupOpen(true);
+            }}
           >
             <Search className="h-3.5 w-3.5" />
             Search Online Fixtures
@@ -493,8 +506,8 @@ function NewMatchForm() {
               <OnlineFixtureLookup
                 initialQuery={playerA || playerB}
                 onPick={(f) => {
-                  if (f.playerA) setPlayerA(f.playerA);
-                  if (f.playerB) setPlayerB(f.playerB);
+                  setPlayerA(f.playerA || f.title.split(/\s+vs\.?\s+/i)[0] || "");
+                  setPlayerB(f.playerB || f.title.split(/\s+vs\.?\s+/i)[1] || "");
                   if (f.tournament) pickTournament(f.tournament);
                   if (f.country) setCountry(f.country);
                   setStartsAt(toLocalInput(f.startsAt));
