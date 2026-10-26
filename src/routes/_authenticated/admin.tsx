@@ -221,6 +221,7 @@ function AdminPage() {
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
       <SyncResultsButton />
+      <ImportOfficialSchedule />
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
       <p className="text-xs text-muted-foreground">
