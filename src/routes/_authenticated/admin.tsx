@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { pdcOfficialFixtures } from "@/data/pdc2026Fixtures";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -221,6 +222,7 @@ function AdminPage() {
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
       <SyncResultsButton />
+      <ImportOfficialSchedule />
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
       <p className="text-xs text-muted-foreground">
@@ -1234,5 +1236,51 @@ function SyncResultsButton() {
       <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
       {sync.isPending ? "Fetching…" : "Fetch Latest Results"}
     </Button>
+  );
+}
+
+function ImportOfficialSchedule() {
+  const queryClient = useQueryClient();
+  const run = useMutation({
+    mutationFn: async () => {
+      const { data: existing, error: readErr } = await supabase
+        .from("matches")
+        .select("player_a, player_b, starts_at");
+      if (readErr) throw readErr;
+      const key = (a: string, b: string, t: string) => `${a}|${b}|${new Date(t).getTime()}`;
+      const seen = new Set((existing ?? []).map((m) => key(m.player_a, m.player_b, m.starts_at)));
+      const rows = pdcOfficialFixtures
+        .filter((f) => !seen.has(key(f.playerA, f.playerB, f.starts_at)))
+        .map((f) => ({
+          player_a: f.playerA,
+          player_b: f.playerB,
+          tournament: f.tournament,
+          starts_at: f.starts_at,
+          format: f.format ?? "legs",
+          country: f.country ?? null,
+        }));
+      if (rows.length) {
+        const { error } = await supabase.from("matches").insert(rows);
+        if (error) throw error;
+      }
+      return { added: rows.length, skipped: pdcOfficialFixtures.length - rows.length };
+    },
+    onSuccess: ({ added, skipped }) => {
+      toast.success(`Imported ${added} fixture${added === 1 ? "" : "s"}${skipped ? ` (${skipped} already added)` : ""}`);
+      queryClient.invalidateQueries({ queryKey: ["matches"] });
+      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Import failed"),
+  });
+  return (
+    <section className="mt-4 rounded-xl border border-border bg-card p-4">
+      <h2 className="font-display text-lg font-bold uppercase">Import Official Tournaments</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Adds {pdcOfficialFixtures.length} official fixtures from the built-in schedule. Duplicates are skipped.
+      </p>
+      <Button type="button" className="mt-3 w-full" disabled={run.isPending} onClick={() => run.mutate()}>
+        {run.isPending ? "Importing…" : "Import Premier League Schedule"}
+      </Button>
+    </section>
   );
 }
