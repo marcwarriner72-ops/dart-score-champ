@@ -345,14 +345,23 @@ function OnlineFixtureLookup({
 }) {
   const fetchFixtures = useServerFn(getUpcomingSportsDbFixtures);
   const [q, setQ] = useState(initialQuery);
+  const [debounced, setDebounced] = useState(initialQuery.trim());
+  useEffect(() => {
+    const t = setTimeout(() => setDebounced(q.trim()), 400);
+    return () => clearTimeout(t);
+  }, [q]);
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["online-fixtures", "4554", "season"],
-    queryFn: () => fetchFixtures({ data: { leagueId: "4554" } }),
+    queryKey: ["online-fixtures", "4554", "search", debounced.length >= 3 ? debounced : ""],
+    queryFn: () =>
+      fetchFixtures({
+        data: { leagueId: "4554", query: debounced.length >= 3 ? debounced : "" },
+      }),
     staleTime: 10 * 60 * 1000,
+    placeholderData: (prev) => prev,
   });
   const words = q.toLowerCase().split(/\s+/).filter(Boolean);
   const list = (data ?? []).filter((f) => {
-    const hay = `${f.title} ${f.playerA} ${f.playerB} ${f.tournament}`.toLowerCase();
+    const hay = f.title.toLowerCase();
     return words.every((w) => hay.includes(w));
   });
   return (

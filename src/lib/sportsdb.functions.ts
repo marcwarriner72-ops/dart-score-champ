@@ -229,8 +229,9 @@ export type OnlineFixture = {
 };
 
 export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
-  .inputValidator((input: { leagueId?: string } | undefined) => ({
+  .inputValidator((input: { leagueId?: string; query?: string } | undefined) => ({
     leagueId: /^\d+$/.test(input?.leagueId ?? "") ? input!.leagueId! : "4554",
+    query: String(input?.query ?? "").trim().slice(0, 80),
   }))
   .handler(async ({ data }): Promise<OnlineFixture[]> => {
     const key = process.env["THESPORTSDB_API_KEY"] ?? "123";
@@ -239,22 +240,30 @@ export const getUpcomingSportsDbFixtures = createServerFn({ method: "GET" })
       idEvent?: string | null;
       strHomeTeam?: string | null;
       strAwayTeam?: string | null;
+      strSport?: string | null;
     };
     const get = async (path: string): Promise<Ev[]> => {
       try {
         const res = await fetch(`${base}${path}`);
         if (!res.ok) return [];
-        const json = (await res.json()) as { events?: Ev[] | null };
-        return json.events ?? [];
+        const json = (await res.json()) as { event?: Ev[] | null; events?: Ev[] | null };
+        return json.event ?? json.events ?? [];
       } catch {
         return [];
       }
     };
+    // Universal event search (works for individual sports), filtered to Darts.
+    const searched = data.query
+      ? (await get(`/searchevents.php?e=${encodeURIComponent(data.query)}`)).filter(
+          (e) => !e.strSport || /darts/i.test(e.strSport),
+        )
+      : [];
     const y = new Date().getUTCFullYear() || 2026;
     let events = await get(`/eventsseason.php?id=${data.leagueId}&s=${y}`);
     if (!events.length && y !== 2026) {
       events = await get(`/eventsseason.php?id=${data.leagueId}&s=2026`);
     }
+    events = [...searched, ...events];
     const today = Date.now();
     const scored = new Set<string>();
     const seen = new Set<string>();
