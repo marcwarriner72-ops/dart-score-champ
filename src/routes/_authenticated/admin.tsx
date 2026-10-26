@@ -176,8 +176,11 @@ export const Route = createFileRoute("/_authenticated/admin")({
 });
 
 /** ISO string -> value usable by <input type="datetime-local"> in local time. */
-function toLocalInput(iso: string) {
-  const d = new Date(iso);
+function toLocalInput(iso: string | null | undefined) {
+  if (!iso) return "";
+  let d = new Date(iso);
+  if (Number.isNaN(d.getTime())) d = new Date(String(iso).replace(" ", "T"));
+  if (Number.isNaN(d.getTime())) return "";
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
@@ -506,12 +509,15 @@ function NewMatchForm() {
               <OnlineFixtureLookup
                 initialQuery={playerA || playerB}
                 onPick={(f) => {
-                  setPlayerA(f.playerA || f.title.split(/\s+vs\.?\s+/i)[0] || "");
-                  setPlayerB(f.playerB || f.title.split(/\s+vs\.?\s+/i)[1] || "");
-                  if (f.tournament) pickTournament(f.tournament);
+                  const parts = f.title.split(/\s+(?:vs?\.?|v)\s+/i);
+                  const a = (f.playerA || (parts.length === 2 ? parts[0] : "") || "").trim();
+                  const b = (f.playerB || (parts.length === 2 ? parts[1] : "") || "").trim();
+                  if (a) setPlayerA(a);
+                  if (b) setPlayerB(b);
+                  pickTournament(f.tournament || (!a || !b ? f.title : tournament));
                   if (f.country) setCountry(f.country);
                   setStartsAt(toLocalInput(f.startsAt));
-                  setExternalId(f.idEvent);
+                  setExternalId(String(f.idEvent ?? ""));
                   setLookupOpen(false);
                   toast.success("Fixture details filled in");
                 }}
