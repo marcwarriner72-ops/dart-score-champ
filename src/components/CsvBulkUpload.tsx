@@ -15,7 +15,7 @@ const SAMPLE =
 type Status = { ok: boolean; messages: string[] } | null;
 
 export function parseFixtureCsv(text: string) {
-  const res = Papa.parse<Record<string, string>>(text, {
+  const res = Papa.parse<Partial<Record<(typeof COLUMNS)[number], string>>>(text, {
     header: true,
     skipEmptyLines: "greedy",
     transformHeader: (h) => h.trim().toLowerCase(),
