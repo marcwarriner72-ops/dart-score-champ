@@ -424,9 +424,6 @@ function NewMatchForm() {
   const [startsAt, setStartsAt] = useState("");
   const [format, setFormat] = useState("legs");
   const [country, setCountry] = useState("GB");
-  const [externalId, setExternalId] = useState("");
-  const [confirming, setConfirming] = useState(false);
-  const [lookupOpen, setLookupOpen] = useState(false);
 
   /** Picking a known competition pre-fills its host country. */
   function pickTournament(v: string) {
@@ -446,13 +443,11 @@ function NewMatchForm() {
         starts_at: new Date(startsAt).toISOString(),
         format,
         country,
-        external_event_id: externalId.trim() || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Match added");
-      setExternalId("");
       setPlayerA("");
       setPlayerB("");
       setTournament("");
@@ -490,58 +485,6 @@ function NewMatchForm() {
           type="datetime-local"
           value={startsAt}
           onChange={(e) => setStartsAt(e.target.value)}
-        />
-      </div>
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between gap-2">
-          <Label htmlFor="extid">TheSportsDB Event ID (optional)</Label>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="h-7 gap-1 px-2 text-xs"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setLookupOpen(true);
-            }}
-          >
-            <Search className="h-3.5 w-3.5" />
-            Search Online Fixtures
-          </Button>
-        </div>
-        <Dialog open={lookupOpen} onOpenChange={setLookupOpen}>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Online PDC fixtures</DialogTitle>
-              <DialogDescription>Tap a match to fill in the form.</DialogDescription>
-            </DialogHeader>
-            {lookupOpen && (
-              <OnlineFixtureLookup
-                initialQuery={playerA || playerB}
-                onPick={(f) => {
-                  const parts = f.title.split(/\s+(?:vs?\.?|v)\s+/i);
-                  const a = (f.playerA || (parts.length === 2 ? parts[0] : "") || "").trim();
-                  const b = (f.playerB || (parts.length === 2 ? parts[1] : "") || "").trim();
-                  if (a) setPlayerA(a);
-                  if (b) setPlayerB(b);
-                  pickTournament(f.tournament || (!a || !b ? f.title : tournament));
-                  if (f.country) setCountry(f.country);
-                  setStartsAt(toLocalInput(f.startsAt));
-                  setExternalId(String(f.idEvent ?? ""));
-                  setLookupOpen(false);
-                  toast.success("Fixture details filled in");
-                }}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
-        <Input
-          id="extid"
-          inputMode="numeric"
-          placeholder="e.g. 2619969"
-          value={externalId}
-          onChange={(e) => setExternalId(e.target.value)}
         />
       </div>
       <Button
@@ -585,7 +528,6 @@ function ResultForm({ match }: { match: Match }) {
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
   const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
-  const [externalId, setExternalId] = useState(match.external_event_id ?? "");
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -638,7 +580,6 @@ function ResultForm({ match }: { match: Match }) {
           starts_at: new Date(startsAt).toISOString(),
           format,
           country,
-          external_event_id: externalId.trim() || null,
         })
         .eq("id", match.id);
       if (error) throw error;
@@ -773,17 +714,6 @@ function ResultForm({ match }: { match: Match }) {
           <CountryPicker id={`country-${match.id}`} value={country} onChange={setCountry} />
           <FormatPicker id={`format-${match.id}`} value={format} onChange={setFormat} />
 
-          <div className="space-y-1.5">
-            <Label htmlFor={`extid-${match.id}`}>TheSportsDB Event ID (optional)</Label>
-            <Input
-              id={`extid-${match.id}`}
-              inputMode="numeric"
-              placeholder="e.g. 2619969"
-              value={externalId}
-              onChange={(e) => setExternalId(e.target.value)}
-            />
-          </div>
-
 
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
@@ -803,7 +733,6 @@ function ResultForm({ match }: { match: Match }) {
                 setPlayerB(match.player_b);
                 setTournament(match.tournament ?? "");
                 setStartsAt(toLocalInput(match.starts_at));
-                setExternalId(match.external_event_id ?? "");
                 setEditing(false);
               }}
             >
@@ -1183,59 +1112,6 @@ function AdminPredictions({ match }: { match: Match }) {
         onConfirm={() => confirmRemove && remove.mutate(confirmRemove)}
       />
     </Collapsible>
-  );
-}
-
-/** Pulls finished scores from TheSportsDB for fixtures with a saved event ID. Only score_a/score_b are written. */
-function SyncResultsButton() {
-  const queryClient = useQueryClient();
-  const fetchScores = useServerFn(getPastDartsScores);
-  const sync = useMutation({
-    mutationFn: async () => {
-      const { data: rows, error } = await supabase
-        .from("matches")
-        .select("id, external_event_id, score_a, score_b")
-        .not("external_event_id", "is", null);
-      if (error) throw error;
-      const linked = (rows ?? []).filter((r) => r.external_event_id?.trim());
-      if (!linked.length) return { updated: 0, linked: 0 };
-      const scores = await fetchScores({
-        data: { ids: linked.map((r) => r.external_event_id!.trim()) },
-      });
-      const byId = new Map(scores.map((s) => [s.idEvent, s]));
-      let updated = 0;
-      for (const r of linked) {
-        const s = byId.get(r.external_event_id!.trim());
-        if (!s || (r.score_a === s.home && r.score_b === s.away)) continue;
-        const { error: e } = await supabase
-          .from("matches")
-          .update({ score_a: s.home, score_b: s.away })
-          .eq("id", r.id);
-        if (e) throw e;
-        updated++;
-      }
-      return { updated, linked: linked.length };
-    },
-    onSuccess: ({ updated, linked }) => {
-      if (!linked) toast.info("No fixtures have a TheSportsDB Event ID yet");
-      else if (!updated) toast.success("All fixtures are up to date");
-      else toast.success(`${updated} score${updated === 1 ? "" : "s"} updated from TheSportsDB`);
-      queryClient.invalidateQueries({ queryKey: ["matches"] });
-      queryClient.invalidateQueries({ queryKey: ["leaderboard"] });
-      queryClient.invalidateQueries({ queryKey: ["tournament-leaderboard"] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not fetch results"),
-  });
-  return (
-    <Button
-      variant="secondary"
-      className="mt-4 h-11 w-full font-bold uppercase"
-      onClick={() => sync.mutate()}
-      disabled={sync.isPending}
-    >
-      <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
-      {sync.isPending ? "Fetching…" : "Fetch Latest Results"}
-    </Button>
   );
 }
 
