@@ -3,14 +3,9 @@ import { pdcOfficialFixtures } from "@/data/pdc2026Fixtures";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Pencil, RefreshCw, RotateCcw, Search, Trash2, Unlock, Users } from "lucide-react";
+import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useServerFn } from "@tanstack/react-start";
-import {
-  getPastDartsScores,
-  getUpcomingSportsDbFixtures,
-  type OnlineFixture,
-} from "@/lib/sportsdb.functions";
+import { CsvBulkUpload } from "@/components/CsvBulkUpload";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
 import {
@@ -221,7 +216,7 @@ function AdminPage() {
   return (
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
-      <SyncResultsButton />
+      <CsvBulkUpload />
       <ImportOfficialSchedule />
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
@@ -338,84 +333,6 @@ function AdminManager({ currentUserId }: { currentUserId: string | undefined }) 
 }
 
 
-function OnlineFixtureLookup({
-  initialQuery,
-  onPick,
-}: {
-  initialQuery: string;
-  onPick: (f: OnlineFixture) => void;
-}) {
-  const fetchFixtures = useServerFn(getUpcomingSportsDbFixtures);
-  const [q, setQ] = useState(initialQuery);
-  const [debounced, setDebounced] = useState(initialQuery.trim());
-  useEffect(() => {
-    const t = setTimeout(() => setDebounced(q.trim()), 400);
-    return () => clearTimeout(t);
-  }, [q]);
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ["online-fixtures", "4554", "search", debounced.length >= 3 ? debounced : ""],
-    queryFn: () =>
-      fetchFixtures({
-        data: { leagueId: "4554", query: debounced.length >= 3 ? debounced : "" },
-      }),
-    staleTime: 10 * 60 * 1000,
-    placeholderData: (prev) => prev,
-  });
-  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  const list = (data ?? []).filter((f) => {
-    const hay = f.title.toLowerCase();
-    return words.every((w) => hay.includes(w));
-  });
-  return (
-    <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-2">
-      <Input
-        autoFocus
-        placeholder="Filter by player or tournament"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-      />
-      <div className="max-h-64 space-y-1 overflow-y-auto">
-        {isLoading && (
-          <div className="flex flex-col items-center justify-center gap-2 py-8 text-xs text-muted-foreground">
-            <span className="h-6 w-6 animate-spin rounded-full border-2 border-muted border-t-primary" />
-            Loading fixtures…
-          </div>
-        )}
-        {isError && <p className="p-2 text-xs text-destructive">Couldn't reach TheSportsDB.</p>}
-        {!isLoading && !isError && list.length === 0 && (
-          <p className="p-2 text-xs text-muted-foreground">No online fixtures match.</p>
-        )}
-        {list.map((f) => (
-          <button
-            key={f.idEvent}
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onPick(f);
-            }}
-            className="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-accent active:scale-[0.99]"
-          >
-            <span className="min-w-0">
-              <span className="block truncate font-semibold">
-                {new Date(f.startsAt).toLocaleString(undefined, {
-                  dateStyle: "medium",
-                  timeStyle: "short",
-                })}{" "}
-                - {f.playerA && f.playerB ? `${f.playerA} vs ${f.playerB}` : f.title}
-              </span>
-              {f.tournament && (
-                <span className="block truncate text-xs text-muted-foreground">{f.tournament}</span>
-              )}
-            </span>
-            <span className="shrink-0 text-xs text-muted-foreground">#{f.idEvent}</span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function NewMatchForm() {
   const queryClient = useQueryClient();
   const [playerA, setPlayerA] = useState("");
@@ -424,6 +341,7 @@ function NewMatchForm() {
   const [startsAt, setStartsAt] = useState("");
   const [format, setFormat] = useState("legs");
   const [country, setCountry] = useState("GB");
+  const [confirming, setConfirming] = useState(false);
 
   /** Picking a known competition pre-fills its host country. */
   function pickTournament(v: string) {
