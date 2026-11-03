@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { PALETTES, usePalette } from "@/lib/palette";
 
 
 async function downscale(file: File, max = 512): Promise<Blob> {
@@ -169,6 +170,7 @@ function ProfilePage() {
 
   return (
     <AppShell title="Profile" subtitle="How your friends see you">
+      <PalettePicker />
       <section className="panel space-y-4 p-4">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -402,6 +404,33 @@ function ReminderSettings() {
           Tip: add the app to your home screen so reminders reach you faster.
         </p>
       )}
+    </section>
+  );
+}
+
+function PalettePicker() {
+  const { palette, setPalette } = usePalette();
+  return (
+    <section className="panel mb-4 space-y-3 p-4">
+      <h2 className="font-display text-xl uppercase">Colour palette</h2>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {PALETTES.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => setPalette(p.id)}
+            aria-pressed={palette === p.id}
+            className={`rounded-lg border p-2 text-left text-xs font-semibold transition ${palette === p.id ? "border-primary ring-2 ring-primary/50" : "border-border"}`}
+          >
+            <span className="mb-1.5 flex gap-1">
+              {p.swatch.map((c) => (
+                <span key={c} className="size-5 rounded-full" style={{ background: c }} />
+              ))}
+            </span>
+            {p.name}
+          </button>
+        ))}
+      </div>
     </section>
   );
 }

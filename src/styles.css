@@ -260,3 +260,10 @@
   to { transform: rotateY(360deg) rotateX(12deg) rotateZ(90deg); }
 }
 @media (prefers-reduced-motion: reduce) { .dartboard-3d > svg { animation: none; } }
+
+/* User colour palettes (set on profile) */
+[data-palette="electric"] { --primary: oklch(0.8 0.14 210); --ring: oklch(0.8 0.14 210); --accent: oklch(0.72 0.22 330); --gold: oklch(0.9 0.08 200); }
+[data-palette="amber"] { --primary: oklch(0.8 0.15 75); --ring: oklch(0.8 0.15 75); --accent: oklch(0.68 0.19 45); --gold: oklch(0.9 0.12 90); }
+[data-palette="crimson"] { --primary: oklch(0.64 0.22 25); --ring: oklch(0.64 0.22 25); --accent: oklch(0.78 0.16 70); --gold: oklch(0.82 0.1 20); }
+[data-palette="stealth"] { --primary: oklch(0.86 0.02 250); --ring: oklch(0.86 0.02 250); --accent: oklch(0.6 0.04 250); --gold: oklch(0.95 0.01 250); }
+[data-palette] { --primary-foreground: oklch(0.15 0.02 250); }

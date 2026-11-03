@@ -10,6 +10,7 @@ import { NextUpStrip, useMatchReminders } from "@/components/MatchReminders";
 import { Button } from "@/components/ui/button";
 import { NewsTicker } from "@/components/News";
 import { usePushListener } from "@/components/Push";
+import { usePalette } from "@/lib/palette";
 
 
 export function AppShell({
@@ -24,6 +25,7 @@ export function AppShell({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: user } = useSession();
+  usePalette();
   const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: matches = [] } = useMatches();
