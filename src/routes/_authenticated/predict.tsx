@@ -252,71 +252,68 @@ function PredictionCard({
   }
 
   const winnerName = winner === "a" ? match.player_a : match.player_b;
+  const isLive = new Date(match.starts_at).getTime() <= Date.now();
 
   return (
-    <div className="panel p-4">
-      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-2">
-        <div className="min-w-0">
-          <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-            <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
-            <span className="truncate">{match.tournament || "Match"}</span>
-          </p>
-
-          <p className="truncate font-display text-xl font-bold uppercase">
-            {match.player_a} <span className="text-accent">vs</span> {match.player_b}
-          </p>
+    <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950/90 p-4 shadow-2xl backdrop-blur-md">
+      <div aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_12px_var(--primary)]" />
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex min-w-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
+          <span className="truncate">{match.tournament || "Match"}</span>
+        </p>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {isLive && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-destructive">
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-destructive" />
+              </span>
+              Live
+            </span>
+          )}
+          {existing && (
+            <span className="rounded-full bg-primary/15 px-2 py-1 text-[10px] font-bold uppercase text-primary">Locked in</span>
+          )}
         </div>
-        {existing && (
-          <span className="shrink-0 rounded-full bg-primary/15 px-2 py-1 text-[10px] font-bold uppercase text-primary">
-            Locked in
-          </span>
-        )}
       </div>
-      <p className="mt-1 text-xs text-muted-foreground">{formatDate(match.starts_at)}</p>
+      <p className="mt-1 text-xs tabular-nums text-muted-foreground">{formatDate(match.starts_at)}</p>
 
       <div className="mt-3 grid grid-cols-2 gap-2">
-        <WinnerButton
-          active={winner === "a"}
-          label={match.player_a}
-          onClick={() => setWinner("a")}
-        />
-        <WinnerButton
-          active={winner === "b"}
-          label={match.player_b}
-          onClick={() => setWinner("b")}
-        />
+        <WinnerButton active={winner === "a"} label={match.player_a} onClick={() => setWinner("a")} />
+        <WinnerButton active={winner === "b"} label={match.player_b} onClick={() => setWinner("b")} />
       </div>
 
-      <div className="mt-3 flex items-center justify-center gap-3">
+      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2">
         <Input
           inputMode="numeric"
-          className="h-12 w-16 text-center font-display text-2xl"
+          className="h-12 border-slate-800 bg-slate-950 text-center font-display text-2xl tabular-nums"
           value={scoreA}
           onChange={(e) => setScoreA(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          aria-label={`Legs for ${match.player_a}`}
+          aria-label={`Score for ${match.player_a}`}
           placeholder="0"
         />
-        <span className="font-display text-2xl text-muted-foreground">
+        <span className="px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           {matchFormatLabel(match).toLowerCase()}
         </span>
         <Input
           inputMode="numeric"
-          className="h-12 w-16 text-center font-display text-2xl"
+          className="h-12 border-slate-800 bg-slate-950 text-center font-display text-2xl tabular-nums"
           value={scoreB}
           onChange={(e) => setScoreB(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          aria-label={`Legs for ${match.player_b}`}
+          aria-label={`Score for ${match.player_b}`}
           placeholder="0"
         />
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/30 px-3 py-2">
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2">
         <label htmlFor={`g180-${match.id}`} className="text-xs font-semibold uppercase tracking-wide">
           Total 180s in match <span className="block text-[10px] font-normal normal-case text-accent">Exact guess = +5 bonus (optional)</span>
         </label>
         <Input
           id={`g180-${match.id}`}
           inputMode="numeric"
-          className="h-11 w-16 text-center font-display text-xl"
+          className="h-11 w-16 border-slate-800 bg-slate-950 text-center font-display text-xl tabular-nums"
           value={guess180s}
           onChange={(e) => setGuess180s(e.target.value.replace(/\D/g, "").slice(0, 2))}
           placeholder="–"
