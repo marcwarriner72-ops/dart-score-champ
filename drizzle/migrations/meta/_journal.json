@@ -15,6 +15,13 @@
       "when": 1793666542255,
       "tag": "0001_darts_180s_news_push",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793666558828,
+      "tag": "0002_remove_may_premier_league_fixtures",
+      "breakpoints": true
     }
   ]
 }

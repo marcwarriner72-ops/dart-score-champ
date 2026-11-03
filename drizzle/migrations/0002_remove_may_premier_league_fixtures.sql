@@ -1,0 +1,2 @@
+DELETE FROM public.predictions WHERE match_id IN ('2a1f520d-9057-41d0-a576-6bfc861072a0','e2b280ef-e914-46a0-b3c7-9c9c8e058a3b','3bb087a9-c47d-46e8-aa7d-e5935efa2ebe','e2ac795f-16d1-481d-b83c-1433b3434c46');
+DELETE FROM public.matches WHERE id IN ('2a1f520d-9057-41d0-a576-6bfc861072a0','e2b280ef-e914-46a0-b3c7-9c9c8e058a3b','3bb087a9-c47d-46e8-aa7d-e5935efa2ebe','e2ac795f-16d1-481d-b83c-1433b3434c46');
