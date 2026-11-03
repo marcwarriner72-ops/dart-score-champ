@@ -41,14 +41,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
-  const [booting, setBooting] = useState(false);
-  useEffect(() => {
-    if (!sessionStorage.getItem("darts:booted")) setBooting(true);
-  }, []);
-  const finishBoot = useCallback(() => {
-    sessionStorage.setItem("darts:booted", "1");
-    setBooting(false);
-  }, []);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -135,6 +127,14 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  const [booting, setBooting] = useState(false);
+  useEffect(() => {
+    if (!sessionStorage.getItem("darts:booted")) setBooting(true);
+  }, []);
+  const finishBoot = useCallback(() => {
+    sessionStorage.setItem("darts:booted", "1");
+    setBooting(false);
+  }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
