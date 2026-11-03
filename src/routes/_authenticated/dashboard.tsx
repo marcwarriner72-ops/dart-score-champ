@@ -42,11 +42,14 @@ function Dashboard() {
   const { data: standings = [] } = useTournamentLeaderboard();
   const { data: tournaments = [] } = useTournaments();
 
-  const activeT = tournaments.find((t) => t.is_active);
-  // A finished competition stays on show (for the champion banner) until an admin resets it.
-  const latestT = activeT ?? tournaments[0];
-  const currentTournament = latestT?.tournament ?? null;
-  const hasActive = !!latestT && (activeT ? true : latestT.match_count > 0 && !wasReset(latestT));
+  void tournaments;
+  // Current = latest competition with fixtures not yet archived by an admin reset.
+  // A finished competition stays on show (for the champion banner) until it's reset.
+  const latestLive = matches
+    .filter((m) => !m.archived)
+    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+  const currentTournament = latestLive ? latestLive.tournament || "Other" : null;
+  const hasActive = !!latestLive;
 
   const board = useMemo(
     () =>
@@ -59,7 +62,7 @@ function Dashboard() {
 
   // Only the current (still running) competition — after an admin reset there is none until new fixtures arrive.
   const curMatches = matches.filter(
-    (m) => (m.tournament || "Other") === currentTournament && hasActive,
+    (m) => !m.archived && (m.tournament || "Other") === currentTournament && hasActive,
   );
   const lastPlayed = curMatches
     .filter((m) => m.score_a !== null && m.score_b !== null)

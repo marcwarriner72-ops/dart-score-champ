@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Archive } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTournaments } from "@/lib/league";
+import { useMatches, useTournaments } from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -20,7 +20,12 @@ export const RESET_PIN = "7912";
 export function CompetitionReset() {
   const queryClient = useQueryClient();
   const { data: tournaments = [] } = useTournaments();
-  const current = tournaments.find((t) => t.is_active)?.tournament ?? null;
+  const { data: matches = [] } = useMatches();
+  // Current = most recent competition with any fixture not yet archived.
+  const live = matches.filter((m) => !m.archived);
+  const latest = live.sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+  const current = latest ? latest.tournament || "Other" : null;
+  void tournaments;
   const [open, setOpen] = useState(false);
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
@@ -32,7 +37,7 @@ export function CompetitionReset() {
     }
     if (!current) return;
     setBusy(true);
-    const q = supabase.from("matches").update({ status: "finished" }).neq("status", "finished");
+    const q = supabase.from("matches").update({ status: "finished", archived: true }).eq("archived", false);
     const { error } = await (current === "Other" ? q.is("tournament", null) : q.eq("tournament", current));
     setBusy(false);
     if (error) {

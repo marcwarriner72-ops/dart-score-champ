@@ -14,6 +14,8 @@ export type Match = {
   country?: string | null;
   external_event_id?: string | null;
   total_180s?: number | null;
+  /** Set when an admin archives & resets the competition. */
+  archived?: boolean;
 };
 
 /** Preset PDC World Series events offered in the admin tournament dropdown. */
