@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv } from "lucide-react";
+import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv, Swords, Users } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,6 +12,46 @@ import { NewsTicker } from "@/components/News";
 import { usePushListener } from "@/components/Push";
 import { usePalette } from "@/lib/palette";
 
+type NavItem = { to: string; icon: typeof Target; label: string; short: string; badge?: number };
+type NavGroup = { label: string; icon: typeof Target; items: NavItem[] };
+
+function buildGroups(isAdmin: boolean, toPredict: number): NavGroup[] {
+  return [
+    { label: "Home", icon: Target, items: [{ to: "/dashboard", icon: Target, label: "League Dashboard", short: "Dashboard" }] },
+    {
+      label: "Matches",
+      icon: Swords,
+      items: [
+        { to: "/predict", icon: ListChecks, label: "Make Predictions", short: "Predict", badge: toPredict },
+        { to: "/results", icon: Archive, label: "Results & Archive", short: "Results" },
+      ],
+    },
+    {
+      label: "Standings",
+      icon: Trophy,
+      items: [
+        { to: "/leaderboard", icon: Trophy, label: "League Table", short: "Table" },
+        { to: "/rules", icon: BookOpen, label: "Official Rulebook", short: "Rules" },
+      ],
+    },
+    {
+      label: "Lounge",
+      icon: Users,
+      items: [
+        { to: "/chat", icon: MessageCircle, label: "Live Chatroom", short: "Chat" },
+        { to: "/media", icon: Tv, label: "Sports Media Dock", short: "Media" },
+      ],
+    },
+    {
+      label: "Me",
+      icon: Settings,
+      items: [
+        { to: "/profile", icon: Settings, label: "My Profile & Settings", short: "Profile" },
+        ...(isAdmin ? [{ to: "/admin", icon: Wrench, label: "Admin Command Center", short: "Admin" }] : []),
+      ],
+    },
+  ];
+}
 
 export function AppShell({
   title,
@@ -30,6 +70,7 @@ export function AppShell({
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: matches = [] } = useMatches();
   const { data: myPicks = [] } = useMyPredictions(user?.id);
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
   const now = Date.now();
   const toPredict = matches.filter(
     (m) =>
@@ -40,6 +81,9 @@ export function AppShell({
   useMatchReminders();
   usePushListener();
 
+  const groups = buildGroups(!!isAdmin, toPredict);
+  const activeGroup: NavGroup = groups.find((g) => g.items.some((i) => pathname.startsWith(i.to))) ?? groups[0]!;
+  const activeItem: NavItem = activeGroup.items.find((i) => pathname.startsWith(i.to)) ?? activeGroup.items[0]!;
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -68,20 +112,52 @@ export function AppShell({
         </div>
       </header>
 
+      {activeGroup.items.length > 1 ? (
+        <nav aria-label={`${activeGroup.label} sections`} className="mx-4 mb-3 grid auto-cols-fr grid-flow-col border-2 border-border bg-secondary sm:mx-6">
+          {activeGroup.items.map((item) => {
+            const Icon = item.icon;
+            const on = item.to === activeItem.to;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-current={on ? "page" : undefined}
+                className={`relative flex h-11 items-center justify-center gap-2 text-sm font-bold uppercase tracking-wide transition-colors ${on ? "bg-primary text-primary-foreground" : "text-secondary-foreground hover:bg-muted"}`}
+              >
+                <Icon className="size-4" />
+                {item.short}
+                {item.badge ? (
+                  <span className="bg-accent px-1.5 text-[10px] font-bold text-accent-foreground">{item.badge}</span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : null}
+
       <NewsTicker />
       <NextUpStrip />
 
       <main className="flex-1 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-4 sm:px-6">{children}</main>
 
-      <Taskbar isAdmin={!!isAdmin} toPredict={toPredict} />
+      <Taskbar groups={groups} activeGroup={activeGroup} activeItem={activeItem} toPredict={toPredict} />
     </div>
   );
 }
 
-function Taskbar({ isAdmin, toPredict }: { isAdmin: boolean; toPredict: number }) {
+function Taskbar({
+  groups,
+  activeGroup,
+  activeItem,
+  toPredict,
+}: {
+  groups: NavGroup[];
+  activeGroup: NavGroup;
+  activeItem: NavItem;
+  toPredict: number;
+}) {
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState("");
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     const tick = () => setNow(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
@@ -90,19 +166,7 @@ function Taskbar({ isAdmin, toPredict }: { isAdmin: boolean; toPredict: number }
     return () => clearInterval(t);
   }, []);
 
-  const items = [
-    { to: "/dashboard", icon: Target, label: "League Dashboard" },
-    { to: "/predict", icon: ListChecks, label: "Make Predictions", badge: toPredict },
-    { to: "/results", icon: Archive, label: "Results & Archive" },
-    { to: "/leaderboard", icon: Trophy, label: "League Table" },
-    { to: "/chat", icon: MessageCircle, label: "Live Chatroom" },
-    { to: "/media", icon: Tv, label: "Sports Media Dock" },
-    { to: "/rules", icon: BookOpen, label: "Official Rulebook" },
-    { to: "/profile", icon: Settings, label: "My Profile & Settings" },
-    ...(isAdmin ? [{ to: "/admin", icon: Wrench, label: "Admin Command Center" }] : []),
-  ] as const;
-  const active = items.find((i) => pathname.startsWith(i.to)) ?? items[0];
-  const ActiveIcon = active.icon;
+  const ActiveIcon = activeItem.icon;
 
   return (
     <footer className="race-taskbar fixed inset-x-0 bottom-0 z-40 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-t-2 border-border bg-secondary p-2 pb-[calc(.5rem+env(safe-area-inset-bottom))] text-secondary-foreground">
@@ -118,37 +182,47 @@ function Taskbar({ isAdmin, toPredict }: { isAdmin: boolean; toPredict: number }
             ) : null}
           </Button>
         </PopoverTrigger>
-        <PopoverContent side="top" align="start" sideOffset={10} className="w-[min(330px,calc(100vw-16px))] rounded-none border-2 p-0">
+        <PopoverContent side="top" align="start" sideOffset={10} className="max-h-[70vh] w-[min(330px,calc(100vw-16px))] overflow-y-auto rounded-none border-2 p-0">
           <nav aria-label="Start menu" className="grid grid-cols-[28px_minmax(0,1fr)]">
             <div className="flex items-center justify-center bg-primary text-primary-foreground">
               <span className="rotate-180 whitespace-nowrap font-display text-lg [writing-mode:vertical-rl]">Darts Predictor League</span>
             </div>
-            <div className="py-2">
-              {items.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    onClick={() => setOpen(false)}
-                    aria-current={active.to === item.to ? "page" : undefined}
-                    className={`flex h-12 items-center gap-3 px-4 text-sm hover:bg-muted ${active.to === item.to ? "bg-muted font-semibold" : ""}`}
-                  >
-                    <Icon className="size-4 text-primary" />
-                    <span className="flex-1">{item.label}</span>
-                    {"badge" in item && item.badge ? (
-                      <span className="bg-accent px-1.5 text-[10px] font-bold text-accent-foreground">{item.badge}</span>
-                    ) : null}
-                  </Link>
-                );
-              })}
+            <div className="py-1">
+              {groups.map((group) => (
+                <div key={group.label} className="border-b border-border/60 py-1 last:border-b-0">
+                  {group.items.length > 1 ? (
+                    <p className="px-4 pb-0.5 pt-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{group.label}</p>
+                  ) : null}
+                  {group.items.map((item) => {
+                    const Icon = item.icon;
+                    const on = activeItem.to === item.to;
+                    return (
+                      <Link
+                        key={item.to}
+                        to={item.to}
+                        onClick={() => setOpen(false)}
+                        aria-current={on ? "page" : undefined}
+                        className={`flex h-11 items-center gap-3 text-sm hover:bg-muted ${group.items.length > 1 ? "pl-6 pr-4" : "px-4"} ${on ? "bg-muted font-semibold" : ""}`}
+                      >
+                        <Icon className="size-4 text-primary" />
+                        <span className="flex-1">{item.label}</span>
+                        {item.badge ? (
+                          <span className="bg-accent px-1.5 text-[10px] font-bold text-accent-foreground">{item.badge}</span>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           </nav>
         </PopoverContent>
       </Popover>
       <div className="flex min-w-0 items-center gap-2 border-l border-border pl-2">
         <ActiveIcon className="size-4 shrink-0 text-primary" />
-        <span className="truncate text-xs font-medium">{active.label}</span>
+        <span className="truncate text-xs font-medium">
+          {activeGroup.items.length > 1 ? `${activeGroup.label} › ` : ""}{activeItem.short}
+        </span>
       </div>
       <time className="shrink-0 border-l border-border px-2 text-xs tabular-nums">{now}</time>
     </footer>
