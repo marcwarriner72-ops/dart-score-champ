@@ -29,12 +29,7 @@ import {
 
 type Person = { name: string; avatar: string | null };
 
-const PERIODS = [
-  { value: "all", label: "All time" },
-  { value: "7", label: "Last 7 days" },
-  { value: "30", label: "Last 30 days" },
-  { value: "90", label: "Last 3 months" },
-];
+const PAGE_SIZE = 5;
 
 
 
@@ -75,6 +70,11 @@ function ResultsPage() {
   const [query, setQuery] = useState("");
   const [tournament, setTournament] = useState("all");
   const [period, setPeriod] = useState("all");
+  const [page, setPage] = useState(0);
+  const yearOptions = useMemo(
+    () => [...new Set(matches.map((m) => String(new Date(m.starts_at).getFullYear())))].sort().reverse(),
+    [matches],
+  );
   const [state, setState] = useState("finished");
 
   const inPlay = matches.filter((m) => m.status !== "finished" && hasStarted(m));
@@ -86,8 +86,6 @@ function ResultsPage() {
   }, [matches]);
 
   const archive = useMemo(() => {
-    const cutoff =
-      period === "all" ? 0 : Date.now() - Number(period) * 24 * 60 * 60 * 1000;
     const q = query.trim().toLowerCase();
     return matches
       .filter((m) => {
@@ -97,7 +95,7 @@ function ResultsPage() {
         if (state === "pending" && !hasStarted(m)) return false;
         if (state === "all" && !hasStarted(m) && m.status !== "finished") return false;
         if (tournament !== "all" && (m.tournament ?? "Other") !== tournament) return false;
-        if (cutoff && new Date(m.starts_at).getTime() < cutoff) return false;
+        if (period !== "all" && String(new Date(m.starts_at).getFullYear()) !== period) return false;
         if (
           q &&
           !`${m.player_a} ${m.player_b} ${m.tournament ?? ""}`.toLowerCase().includes(q)
@@ -107,6 +105,11 @@ function ResultsPage() {
       })
       .sort((x, y) => new Date(y.starts_at).getTime() - new Date(x.starts_at).getTime());
   }, [matches, query, tournament, period, state]);
+
+  const pageCount = Math.max(1, Math.ceil(archive.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageItems = archive.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+  const pageOptions = Array.from({ length: pageCount }, (_, i) => i);
 
   if (isLoading) {
     return (
@@ -145,14 +148,14 @@ function ResultsPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setPage(0); }}
             placeholder="Search player or competition"
             className="h-10 pl-9"
             aria-label="Search the archive"
           />
         </div>
         <div className="grid grid-cols-3 gap-2">
-          <Select value={tournament} onValueChange={setTournament}>
+          <Select value={tournament} onValueChange={(v) => { setTournament(v); setPage(0); }}>
             <SelectTrigger className="h-10" aria-label="Filter by competition">
               <SelectValue />
             </SelectTrigger>
@@ -165,19 +168,20 @@ function ResultsPage() {
               ))}
             </SelectContent>
           </Select>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="h-10" aria-label="Filter by date">
+          <Select value={period} onValueChange={(v) => { setPeriod(v); setPage(0); }}>
+            <SelectTrigger className="h-10" aria-label="Filter by year">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {PERIODS.map((p) => (
-                <SelectItem key={p.value} value={p.value}>
-                  {p.label}
+              <SelectItem value="all">All years</SelectItem>
+              {yearOptions.map((y) => (
+                <SelectItem key={y} value={y}>
+                  {y}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Select value={state} onValueChange={setState}>
+          <Select value={state} onValueChange={(v) => { setState(v); setPage(0); }}>
             <SelectTrigger className="h-10" aria-label="Filter by completion">
               <SelectValue />
             </SelectTrigger>
@@ -197,7 +201,7 @@ function ResultsPage() {
             description="Try clearing the search or widening the date range."
           />
         ) : (
-          archive.map((m) => (
+          pageItems.map((m) => (
             <MatchCard
               key={m.id}
               match={m}
@@ -208,7 +212,23 @@ function ResultsPage() {
           ))
         )}
       </div>
-
+      {archive.length > PAGE_SIZE && (
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">{archive.length} fixtures</span>
+          <Select value={String(safePage)} onValueChange={(v) => setPage(Number(v))}>
+            <SelectTrigger className="h-10 w-44" aria-label="Choose archive page">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {pageOptions.map((i) => (
+                <SelectItem key={i} value={String(i)}>
+                  Page {i + 1} of {pageCount}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
     </AppShell>
   );
 }

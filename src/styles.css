@@ -245,3 +245,18 @@
 @keyframes dart-run { from { left: -2.5rem; } to { left: 100%; } }
 .dart-runner { animation: dart-run 10s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .dart-runner { animation: none; display: none; } }
+
+.news-scroll { width: max-content; min-width: 100%; white-space: nowrap; animation: news-ticker 35s linear infinite; }
+.news-track:hover .news-scroll { animation-play-state: paused; }
+@keyframes news-ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+@media (prefers-reduced-motion: reduce) {
+  .news-scroll { animation: none; width: auto; white-space: normal; overflow-wrap: anywhere; }
+}
+.splash-vignette { background: radial-gradient(circle at center, transparent 35%, oklch(0 0 0 / 0.9) 100%); }
+.dartboard-3d { perspective: 600px; }
+.dartboard-3d > svg { animation: dartboard-revolve 3s linear infinite; transform-style: preserve-3d; }
+@keyframes dartboard-revolve {
+  from { transform: rotateY(0deg) rotateX(12deg) rotateZ(0deg); }
+  to { transform: rotateY(360deg) rotateX(12deg) rotateZ(90deg); }
+}
+@media (prefers-reduced-motion: reduce) { .dartboard-3d > svg { animation: none; } }

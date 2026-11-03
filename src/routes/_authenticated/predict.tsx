@@ -194,12 +194,15 @@ function PredictionCard({
 }: {
   match: Match;
   userId: string | undefined;
-  existing?: { predicted_winner: string; score_a: number; score_b: number } | undefined;
+  existing?: { predicted_winner: string; score_a: number; score_b: number; guess_180s?: number | null } | undefined;
 }) {
   const queryClient = useQueryClient();
   const [winner, setWinner] = useState<string>(existing?.predicted_winner ?? "");
   const [scoreA, setScoreA] = useState<string>(existing ? String(existing.score_a) : "");
   const [scoreB, setScoreB] = useState<string>(existing ? String(existing.score_b) : "");
+  const [guess180s, setGuess180s] = useState<string>(
+    existing?.guess_180s == null ? "" : String(existing.guess_180s),
+  );
   const [confirming, setConfirming] = useState(false);
 
   const save = useMutation({
@@ -213,6 +216,7 @@ function PredictionCard({
           predicted_winner: winner,
           score_a: a,
           score_b: b,
+          guess_180s: guess180s === "" ? null : Number(guess180s),
         },
         { onConflict: "match_id,user_id" },
       );
@@ -305,6 +309,20 @@ function PredictionCard({
         />
       </div>
 
+      <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-border bg-secondary/30 px-3 py-2">
+        <label htmlFor={`g180-${match.id}`} className="text-xs font-semibold uppercase tracking-wide">
+          Total 180s in match <span className="block text-[10px] font-normal normal-case text-accent">Exact guess = +5 bonus (optional)</span>
+        </label>
+        <Input
+          id={`g180-${match.id}`}
+          inputMode="numeric"
+          className="h-11 w-16 text-center font-display text-xl"
+          value={guess180s}
+          onChange={(e) => setGuess180s(e.target.value.replace(/\D/g, "").slice(0, 2))}
+          placeholder="–"
+        />
+      </div>
+
       <p className="mt-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
         This match is played in {matchFormatLabel(match).toLowerCase()}
       </p>
@@ -323,7 +341,7 @@ function PredictionCard({
             <AlertDialogTitle className="font-display uppercase">Confirm prediction</AlertDialogTitle>
             <AlertDialogDescription>
               {winnerName} to win {scoreA}–{scoreB} in {matchFormatLabel(match).toLowerCase()} (
-              {match.player_a} vs {match.player_b}). You can still edit this until the match starts.
+              {match.player_a} vs {match.player_b}){guess180s !== "" ? `, with ${guess180s} × 180s` : ""}. You can still edit this until the match starts.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -397,7 +415,7 @@ function TournamentSection({
   expanded: boolean;
   onToggle: () => void;
   userId: string | undefined;
-  predictions: { match_id: string; predicted_winner: string; score_a: number; score_b: number }[];
+  predictions: { match_id: string; predicted_winner: string; score_a: number; score_b: number; guess_180s?: number | null }[];
 }) {
   const flagCode = matches[0]?.country ?? guessCountry(name);
   return (

@@ -13,6 +13,7 @@ export type Match = {
   format?: string | null;
   country?: string | null;
   external_event_id?: string | null;
+  total_180s?: number | null;
 };
 
 /** Preset PDC World Series events offered in the admin tournament dropdown. */
@@ -135,6 +136,7 @@ export type Prediction = {
   predicted_winner: string;
   score_a: number;
   score_b: number;
+  guess_180s?: number | null;
 };
 
 export type LeaderboardRow = {
@@ -235,9 +237,16 @@ export function predictionPoints(match: Match, p: Prediction | undefined): numbe
   if (!p) return null;
   if (match.score_a === null || match.score_b === null) return null;
   const actual = match.score_a > match.score_b ? "a" : "b";
-  if (p.predicted_winner !== actual) return 0;
-  if (p.score_a === match.score_a && p.score_b === match.score_b) return 3;
-  return 1;
+  const bonus = bonus180s(match, p);
+  if (p.predicted_winner !== actual) return bonus;
+  if (p.score_a === match.score_a && p.score_b === match.score_b) return 3 + bonus;
+  return 1 + bonus;
+}
+
+/** +5 when the guessed number of 180s matches the match total exactly. */
+export function bonus180s(match: Pick<Match, "total_180s">, p: Pick<Prediction, "guess_180s">): number {
+  if (match.total_180s == null || p.guess_180s == null) return 0;
+  return match.total_180s === p.guess_180s ? 5 : 0;
 }
 
 export function formatDate(iso: string) {

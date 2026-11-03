@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp } from "lucide-react";
+import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { useIsAdmin, useMatches, useMyPredictions, useProfile, useSession } from
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { NextUpStrip, useMatchReminders } from "@/components/MatchReminders";
 import { Button } from "@/components/ui/button";
+import { NewsTicker } from "@/components/News";
+import { usePushListener } from "@/components/Push";
 
 
 export function AppShell({
@@ -34,6 +36,7 @@ export function AppShell({
       !myPicks.some((p) => p.match_id === m.id),
   ).length;
   useMatchReminders();
+  usePushListener();
 
 
   async function signOut() {
@@ -52,7 +55,6 @@ export function AppShell({
           </Link>
           <h1 className="truncate font-display text-4xl leading-none">{title}</h1>
           {subtitle ? <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p> : null}
-          <span aria-hidden="true" className="dart-runner pointer-events-none absolute bottom-0 text-lg leading-none">🎯</span>
         </div>
         <div className="flex items-center gap-1">
           <Link to="/profile" aria-label="Your profile">
@@ -64,6 +66,7 @@ export function AppShell({
         </div>
       </header>
 
+      <NewsTicker />
       <NextUpStrip />
 
       <main className="flex-1 px-4 pb-[calc(5rem+env(safe-area-inset-bottom))] pt-4 sm:px-6">{children}</main>
@@ -91,6 +94,7 @@ function Taskbar({ isAdmin, toPredict }: { isAdmin: boolean; toPredict: number }
     { to: "/results", icon: Archive, label: "Results & Archive" },
     { to: "/leaderboard", icon: Trophy, label: "League Table" },
     { to: "/chat", icon: MessageCircle, label: "Live Chatroom" },
+    { to: "/media", icon: Tv, label: "Sports Media Dock" },
     { to: "/rules", icon: BookOpen, label: "Official Rulebook" },
     { to: "/profile", icon: Settings, label: "My Profile & Settings" },
     ...(isAdmin ? [{ to: "/admin", icon: Wrench, label: "Admin Command Center" }] : []),

@@ -18,6 +18,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
+import { Route as AuthenticatedMediaRouteImport } from './routes/_authenticated/media'
 import { Route as AuthenticatedPredictRouteImport } from './routes/_authenticated/predict'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
@@ -68,6 +69,11 @@ const AuthenticatedLeaderboardRoute =
     path: '/leaderboard',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMediaRoute = AuthenticatedMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPredictRoute = AuthenticatedPredictRouteImport.update({
   id: '/predict',
   path: '/predict',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/media': typeof AuthenticatedMediaRoute
   '/predict': typeof AuthenticatedPredictRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/results': typeof AuthenticatedResultsRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/media': typeof AuthenticatedMediaRoute
   '/predict': typeof AuthenticatedPredictRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/results': typeof AuthenticatedResultsRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/_authenticated/media': typeof AuthenticatedMediaRoute
   '/_authenticated/predict': typeof AuthenticatedPredictRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/results': typeof AuthenticatedResultsRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/leaderboard'
+    | '/media'
     | '/predict'
     | '/profile'
     | '/results'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/dashboard'
     | '/leaderboard'
+    | '/media'
     | '/predict'
     | '/profile'
     | '/results'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/dashboard'
     | '/_authenticated/leaderboard'
+    | '/_authenticated/media'
     | '/_authenticated/predict'
     | '/_authenticated/profile'
     | '/_authenticated/results'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeaderboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/media': {
+      id: '/_authenticated/media'
+      path: '/media'
+      fullPath: '/media'
+      preLoaderRoute: typeof AuthenticatedMediaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/predict': {
       id: '/_authenticated/predict'
       path: '/predict'
@@ -288,6 +307,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
+  AuthenticatedMediaRoute: typeof AuthenticatedMediaRoute
   AuthenticatedPredictRoute: typeof AuthenticatedPredictRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
@@ -299,6 +319,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
+  AuthenticatedMediaRoute: AuthenticatedMediaRoute,
   AuthenticatedPredictRoute: AuthenticatedPredictRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,

@@ -27,6 +27,7 @@ export type Database = {
           score_b: number | null
           starts_at: string
           status: string
+          total_180s: number | null
           tournament: string | null
         }
         Insert: {
@@ -41,6 +42,7 @@ export type Database = {
           score_b?: number | null
           starts_at: string
           status?: string
+          total_180s?: number | null
           tournament?: string | null
         }
         Update: {
@@ -55,6 +57,7 @@ export type Database = {
           score_b?: number | null
           starts_at?: string
           status?: string
+          total_180s?: number | null
           tournament?: string | null
         }
         Relationships: []
@@ -83,9 +86,28 @@ export type Database = {
         }
         Relationships: []
       }
+      news_updates: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+        }
+        Relationships: []
+      }
       predictions: {
         Row: {
           created_at: string
+          guess_180s: number | null
           id: string
           match_id: string
           predicted_winner: string
@@ -96,6 +118,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          guess_180s?: number | null
           id?: string
           match_id: string
           predicted_winner: string
@@ -106,6 +129,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          guess_180s?: number | null
           id?: string
           match_id?: string
           predicted_winner?: string
@@ -157,6 +181,42 @@ export type Database = {
           hometown?: string | null
           id?: string
           walk_on_song?: string | null
+        }
+        Relationships: []
+      }
+      push_alerts: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+        }
+        Relationships: []
+      }
+      push_opt_ins: {
+        Row: {
+          enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          enabled?: boolean
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -214,6 +274,10 @@ export type Database = {
       }
     }
     Functions: {
+      bonus_180s: {
+        Args: { m_total: number; p_guess: number }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

@@ -1,5 +1,4 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { pdcOfficialFixtures } from "@/data/pdc2026Fixtures";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -44,6 +43,8 @@ import {
 } from "@/components/ui/select";
 import { DartLoader } from "@/components/DartLoader";
 import { throwDart } from "@/components/DartThrow";
+import { PushAdmin } from "@/components/Push";
+import { NewsAdmin } from "@/components/News";
 import {
   Collapsible,
   CollapsibleContent,
@@ -200,28 +201,15 @@ function AdminPage() {
   }
 
   const active = matches.filter((m) => m.status === "upcoming");
-  const finished = matches
-    .filter((m) => m.status === "finished")
-    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
-
-  /** Archive is grouped by tournament, newest event first. */
-  const archiveGroups: { name: string; matches: Match[] }[] = [];
-  for (const m of finished) {
-    const name = m.tournament?.trim() || "Other fixtures";
-    const group = archiveGroups.find((g) => g.name === name);
-    if (group) group.matches.push(m);
-    else archiveGroups.push({ name, matches: [m] });
-  }
 
   return (
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
       <CsvBulkUpload />
-      <ImportOfficialSchedule />
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
       <p className="text-xs text-muted-foreground">
-        Saving a result moves the fixture straight into the archive below.
+        Saving a result moves the fixture to the Results & Archive page.
       </p>
       <div className="mt-2 space-y-3">
         {active.length === 0 && (
@@ -234,34 +222,8 @@ function AdminPage() {
 
       <AdminManager currentUserId={user?.id} />
 
-      <Collapsible className="mt-6">
-        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-xl bg-secondary/50 px-4 py-3 text-left transition active:scale-[0.99]">
-          <span className="font-display text-xl font-bold uppercase">Archive</span>
-          <span className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="rounded-full bg-background/70 px-2 py-0.5 text-xs font-semibold">
-              {finished.length}
-            </span>
-            <ChevronDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
-          </span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-3 space-y-5">
-          {finished.length === 0 && (
-            <p className="text-sm text-muted-foreground">No completed fixtures yet.</p>
-          )}
-          {archiveGroups.map((g) => (
-            <div key={g.name} className="space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                {g.name} · {g.matches.length}
-              </h3>
-              {g.matches.map((m) => (
-                <div key={m.id}>
-                  <ResultForm match={m} />
-                </div>
-              ))}
-            </div>
-          ))}
-        </CollapsibleContent>
-      </Collapsible>
+      <PushAdmin />
+      <NewsAdmin />
     </AppShell>
   );
 }
@@ -446,6 +408,7 @@ function ResultForm({ match }: { match: Match }) {
   const [startsAt, setStartsAt] = useState(toLocalInput(match.starts_at));
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
   const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
+  const [t180, setT180] = useState(match.total_180s == null ? "" : String(match.total_180s));
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -472,7 +435,7 @@ function ResultForm({ match }: { match: Match }) {
       if (sa === sb) throw new Error("A darts match can't end level");
       const { error } = await supabase
         .from("matches")
-        .update({ score_a: sa, score_b: sb, status: "finished" })
+        .update({ score_a: sa, score_b: sb, status: "finished", total_180s: t180 === "" ? null : Number(t180) })
         .eq("id", match.id);
       if (error) throw error;
     },
@@ -694,6 +657,14 @@ function ResultForm({ match }: { match: Match }) {
           onChange={(e) => setB(e.target.value.replace(/\D/g, "").slice(0, 2))}
           aria-label={`Legs for ${match.player_b}`}
         />
+        <Input
+          inputMode="numeric"
+          className="h-11 w-16 text-center font-display text-xl"
+          value={t180}
+          onChange={(e) => setT180(e.target.value.replace(/\D/g, "").slice(0, 2))}
+          aria-label="Total 180s in this match"
+          placeholder="180s"
+        />
         <Button
           className="ml-auto h-11 font-bold uppercase transition-transform active:scale-95"
           onClick={() => setConfirmResult(true)}
@@ -713,7 +684,7 @@ function ResultForm({ match }: { match: Match }) {
         title="Save this result?"
         description={`${match.player_a} ${a || "?"}–${b || "?"} ${match.player_b} in ${matchFormatLabel(
           match,
-        ).toLowerCase()}. This finishes the match and scores everyone's predictions.`}
+        ).toLowerCase()}${t180 !== "" ? `, ${t180} × 180s` : ""}. This finishes the match and scores everyone's predictions.`}
         onConfirm={() => saveResult.mutate()}
       />
       <ConfirmDialog
@@ -1030,51 +1001,5 @@ function AdminPredictions({ match }: { match: Match }) {
         onConfirm={() => confirmRemove && remove.mutate(confirmRemove)}
       />
     </Collapsible>
-  );
-}
-
-function ImportOfficialSchedule() {
-  const queryClient = useQueryClient();
-  const run = useMutation({
-    mutationFn: async () => {
-      const { data: existing, error: readErr } = await supabase
-        .from("matches")
-        .select("player_a, player_b, starts_at");
-      if (readErr) throw readErr;
-      const key = (a: string, b: string, t: string) => `${a}|${b}|${new Date(t).getTime()}`;
-      const seen = new Set((existing ?? []).map((m) => key(m.player_a, m.player_b, m.starts_at)));
-      const rows = pdcOfficialFixtures
-        .filter((f) => !seen.has(key(f.playerA, f.playerB, f.starts_at)))
-        .map((f) => ({
-          player_a: f.playerA,
-          player_b: f.playerB,
-          tournament: f.tournament,
-          starts_at: f.starts_at,
-          format: f.format ?? "legs",
-          country: f.country ?? null,
-        }));
-      if (rows.length) {
-        const { error } = await supabase.from("matches").insert(rows);
-        if (error) throw error;
-      }
-      return { added: rows.length, skipped: pdcOfficialFixtures.length - rows.length };
-    },
-    onSuccess: ({ added, skipped }) => {
-      toast.success(`Imported ${added} fixture${added === 1 ? "" : "s"}${skipped ? ` (${skipped} already added)` : ""}`);
-      queryClient.invalidateQueries({ queryKey: ["matches"] });
-      queryClient.invalidateQueries({ queryKey: ["tournaments"] });
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Import failed"),
-  });
-  return (
-    <section className="mt-4 rounded-xl border border-border bg-card p-4">
-      <h2 className="font-display text-lg font-bold uppercase">Import Official Tournaments</h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Adds {pdcOfficialFixtures.length} official fixtures from the built-in schedule. Duplicates are skipped.
-      </p>
-      <Button type="button" className="mt-3 w-full" disabled={run.isPending} onClick={() => run.mutate()}>
-        {run.isPending ? "Importing…" : "Import Premier League Schedule"}
-      </Button>
-    </section>
   );
 }
