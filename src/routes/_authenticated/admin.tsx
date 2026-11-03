@@ -201,6 +201,16 @@ function AdminPage() {
   }
 
   const active = matches.filter((m) => m.status === "upcoming");
+  const finished = matches
+    .filter((m) => m.status === "finished")
+    .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+  const archiveGroups: { name: string; matches: Match[] }[] = [];
+  for (const m of finished) {
+    const name = m.tournament?.trim() || "Other fixtures";
+    const group = archiveGroups.find((g) => g.name === name);
+    if (group) group.matches.push(m);
+    else archiveGroups.push({ name, matches: [m] });
+  }
 
   return (
     <AppShell title="Admin" subtitle="Fixtures and results">
@@ -219,6 +229,33 @@ function AdminPage() {
           <ResultForm key={m.id} match={m} />
         ))}
       </div>
+
+      <Collapsible className="mt-6">
+        <CollapsibleTrigger className="group flex w-full items-center justify-between gap-3 rounded-xl bg-secondary/50 px-4 py-3 text-left transition active:scale-[0.99]">
+          <span className="font-display text-xl font-bold uppercase">Archive</span>
+          <span className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="rounded-full bg-background/70 px-2 py-0.5 text-xs font-semibold">
+              {finished.length}
+            </span>
+            <ChevronDown className="size-4 transition-transform group-data-[state=open]:rotate-180" />
+          </span>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="mt-3 space-y-5">
+          {finished.length === 0 && (
+            <p className="text-sm text-muted-foreground">No completed fixtures yet.</p>
+          )}
+          {archiveGroups.map((g) => (
+            <div key={g.name} className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {g.name} · {g.matches.length}
+              </h3>
+              {g.matches.map((m) => (
+                <ResultForm key={m.id} match={m} />
+              ))}
+            </div>
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
 
       <AdminManager currentUserId={user?.id} />
 
