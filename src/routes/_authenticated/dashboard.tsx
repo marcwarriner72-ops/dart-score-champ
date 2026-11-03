@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, Trophy, ListChecks } from "lucide-react";
+import { PartyPopper, Target, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useMemo } from "react";
 import {
@@ -42,34 +42,62 @@ function Dashboard() {
   const { data: standings = [] } = useTournamentLeaderboard();
   const { data: tournaments = [] } = useTournaments();
 
-  const currentTournament =
-    tournaments.find((t) => t.is_active)?.tournament ?? tournaments[0]?.tournament ?? null;
+  void tournaments;
+  // Current = latest competition with fixtures not yet archived by an admin reset.
+  // A finished competition stays on show (for the champion banner) until it's reset.
+  const latestLive = matches
+    .filter((m) => !m.archived)
+    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))[0];
+  const currentTournament = latestLive ? latestLive.tournament || "Other" : null;
+  const hasActive = !!latestLive;
 
   const board = useMemo(
     () =>
       standings
-        .filter((r) => r.tournament === currentTournament)
+        .filter((r) => hasActive && r.tournament === currentTournament)
         .slice()
         .sort((a, b) => (b.points ?? 0) - (a.points ?? 0)),
     [standings, currentTournament],
   );
 
-  const upcoming = matches.filter((m) => m.status === "upcoming");
-  const finished = matches.filter((m) => m.status === "finished").slice(-5).reverse();
-  const missing = upcoming.filter((m) => !predictions.some((p) => p.match_id === m.id));
-  const me = board.find((r) => r.user_id === user?.id);
-  const rank = me ? board.findIndex((r) => r.user_id === user?.id) + 1 : null;
+  // Only the current (still running) competition — after an admin reset there is none until new fixtures arrive.
+  const curMatches = matches.filter(
+    (m) => !m.archived && (m.tournament || "Other") === currentTournament && hasActive,
+  );
+  const lastPlayed = curMatches
+    .filter((m) => m.score_a !== null && m.score_b !== null)
+    .sort((a, b) => b.starts_at.localeCompare(a.starts_at))
+    .slice(0, 1);
+  const finished = lastPlayed;
+  const allDone =
+    curMatches.length > 0 && curMatches.every((m) => m.score_a !== null && m.score_b !== null);
+  const champion = allDone ? board[0] : undefined;
 
   return (
     <AppShell
       title="Dashboard"
-      subtitle={currentTournament ? `Your ${currentTournament} so far` : "Your league at a glance"}
+      subtitle={hasActive && currentTournament ? currentTournament : "Waiting for the next competition"}
     >
-      <div className="grid grid-cols-3 gap-3">
-        <Stat label="Points" value={me?.points ?? 0} highlight />
-        <Stat label="Rank" value={rank ? `#${rank}` : "—"} />
-        <Stat label="Bullseyes" value={me?.exact_hits ?? 0} />
-      </div>
+      <section className="panel p-4">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Current competition
+        </p>
+        <h2 className="font-display text-2xl font-bold uppercase">
+          {hasActive && currentTournament ? currentTournament : "None running"}
+        </h2>
+      </section>
+
+      {champion && (
+        <section className="panel mt-4 border-gold/60 p-4 text-center">
+          <PartyPopper className="mx-auto size-8 text-gold" />
+          <h2 className="mt-1 font-display text-2xl font-bold uppercase text-gradient-gold">
+            Congratulations {champion.display_name}!
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {currentTournament} champion with {champion.points ?? 0} pts
+          </p>
+        </section>
+      )}
 
       <div className="mt-4">
         <NextFixtureCountdown matches={matches} />
@@ -77,31 +105,8 @@ function Dashboard() {
 
       <section className="panel mt-4 p-4">
         <div className="flex items-center gap-2">
-          <ListChecks className="size-4 text-primary" />
-          <h2 className="font-display text-xl font-bold uppercase">Open predictions</h2>
-        </div>
-        {missing.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">
-            {upcoming.length === 0
-              ? "No upcoming matches yet. Check back soon."
-              : "All caught up — every upcoming match is predicted."}
-          </p>
-        ) : (
-          <>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {missing.length} match{missing.length > 1 ? "es" : ""} waiting for your call.
-            </p>
-            <Button asChild className="mt-3 h-11 w-full font-bold uppercase">
-              <Link to="/predict">Make predictions</Link>
-            </Button>
-          </>
-        )}
-      </section>
-
-      <section className="panel mt-4 p-4">
-        <div className="flex items-center gap-2">
           <Target className="size-4 text-accent" />
-          <h2 className="font-display text-xl font-bold uppercase">Latest results</h2>
+          <h2 className="font-display text-xl font-bold uppercase">Last match played</h2>
         </div>
         {finished.length === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">No results in yet.</p>
@@ -139,7 +144,7 @@ function Dashboard() {
       <section className="panel mt-4 p-4">
         <div className="flex items-center gap-2">
           <Trophy className="size-4 text-gold" />
-          <h2 className="font-display text-xl font-bold uppercase">Top of the table</h2>
+          <h2 className="font-display text-xl font-bold uppercase">League table</h2>
         </div>
         <ul className="mt-3 space-y-2">
           {board.slice(0, 3).map((row, i) => (
