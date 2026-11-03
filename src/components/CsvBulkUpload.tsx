@@ -37,7 +37,9 @@ function toCountry(v: string | undefined) {
   return COUNTRY_NAMES[s.toLowerCase()] ?? guessCountry(s) ?? "GB";
 }
 
-function toDate(row: Record<string, string>) {
+type Row = Partial<Record<"player_a"|"player_b"|"starts_at"|"date"|"time"|"tournament"|"host_country"|"scored_in", string>>;
+
+function toDate(row: Row) {
   let raw = (row.starts_at ?? "").trim();
   const d = (row.date ?? "").trim();
   const t = (row.time ?? "").trim();
@@ -45,14 +47,14 @@ function toDate(row: Record<string, string>) {
   if (!raw) return null;
   // dd/mm/yyyy [hh:mm] -> yyyy-mm-dd hh:mm
   const uk = raw.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})(.*)$/);
-  if (uk) raw = `${uk[3]}-${uk[2].padStart(2, "0")}-${uk[1].padStart(2, "0")}${uk[4]}`;
+  if (uk) raw = `${uk[3]}-${uk[2]!.padStart(2, "0")}-${uk[1]!.padStart(2, "0")}${uk[4]}`;
   let when = new Date(raw.replace(/^(\d{4}-\d{2}-\d{2}) /, "$1T"));
   if (isNaN(when.getTime())) when = new Date(raw);
   return isNaN(when.getTime()) ? null : when;
 }
 
 export function parseFixtureCsv(text: string) {
-  const res = Papa.parse<Record<string, string>>(text, {
+  const res = Papa.parse<Row>(text, {
     header: true,
     skipEmptyLines: "greedy",
     transformHeader: (h) => {
