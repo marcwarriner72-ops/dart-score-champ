@@ -8,13 +8,13 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
-import { DartThrowOverlay } from "@/components/DartThrow";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 function NotFoundComponent() {
   return (
@@ -41,6 +41,14 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
+  const [booting, setBooting] = useState(false);
+  useEffect(() => {
+    if (!sessionStorage.getItem("darts:booted")) setBooting(true);
+  }, []);
+  const finishBoot = useCallback(() => {
+    sessionStorage.setItem("darts:booted", "1");
+    setBooting(false);
+  }, []);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -142,7 +150,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster position="top-center" />
-      <DartThrowOverlay />
+      {booting && <LoadingScreen onComplete={finishBoot} />}
     </QueryClientProvider>
   );
 }

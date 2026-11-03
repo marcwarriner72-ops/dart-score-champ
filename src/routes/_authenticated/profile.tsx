@@ -6,6 +6,7 @@ import { Bell, Camera, Trash2, Volume2 } from "lucide-react";
 import { playThwack, setSoundEnabled, soundEnabled } from "@/lib/sound";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/AppShell";
+import { PushOptIn } from "@/components/Push";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { useProfile, useSession } from "@/lib/league";
 import {
@@ -317,6 +318,7 @@ function ProfilePage() {
         </Button>
       </section>
 
+      <div className="mt-4"><PushOptIn /></div>
       <ReminderSettings />
       <SoundSettings />
     </AppShell>

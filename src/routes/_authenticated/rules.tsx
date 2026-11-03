@@ -18,6 +18,9 @@ function RulesPage() {
         <Rule points="0" tone="accent" title="Off the wire">
           Wrong winner — nothing scored.
         </Rule>
+        <Rule points="+5" tone="gold" title="Maximum bonus">
+          Guess the exact number of 180s thrown in the match for 5 extra points on top of your result score.
+        </Rule>
       </div>
 
       <div className="panel mt-4 space-y-2 p-4 text-sm text-muted-foreground">
