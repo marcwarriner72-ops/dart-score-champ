@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CsvBulkUpload } from "@/components/CsvBulkUpload";
+import { CompetitionReset } from "@/components/CompetitionReset";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
 import {
@@ -256,6 +257,8 @@ function AdminPage() {
           ))}
         </CollapsibleContent>
       </Collapsible>
+
+      <CompetitionReset />
 
       <AdminManager currentUserId={user?.id} />
 

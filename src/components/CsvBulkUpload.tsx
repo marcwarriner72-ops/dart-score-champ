@@ -8,46 +8,89 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const COLUMNS = ["player_a", "player_b", "tournament", "host_country", "scored_in", "starts_at"] as const;
-const REQUIRED = ["player_a", "player_b", "starts_at"];
 const SAMPLE =
   "player_a,player_b,tournament,host_country,scored_in,starts_at\nLuke Littler,Luke Humphries,Premier League,GB,legs,2026-02-05 19:00\n";
 
 type Status = { ok: boolean; messages: string[] } | null;
 
+/** External header names -> our column names. Headers are normalised (lowercase, single spaces). */
+const HEADER_MAP: Record<string, string> = {
+  "player 1": "player_a", player_1: "player_a", "player a": "player_a", player_a: "player_a", player1: "player_a",
+  "player 2": "player_b", player_2: "player_b", "player b": "player_b", player_b: "player_b", player2: "player_b",
+  "scheduled start time": "starts_at", "start time": "starts_at", starts_at: "starts_at", datetime: "starts_at",
+  date: "date", time: "time",
+  tournament: "tournament", round: "tournament", competition: "tournament",
+  host_country: "host_country", "host country": "host_country", country: "host_country",
+  scored_in: "scored_in", "scored in": "scored_in", format: "scored_in",
+};
+
+const COUNTRY_NAMES: Record<string, string> = {
+  "united kingdom": "GB", uk: "GB", england: "GB", scotland: "GB", wales: "GB", ireland: "IE",
+  netherlands: "NL", germany: "DE", belgium: "BE", denmark: "DK", sweden: "SE", austria: "AT",
+  "united states": "US", usa: "US", australia: "AU", "new zealand": "NZ", bahrain: "BH", "saudi arabia": "SA",
+};
+
+function toCountry(v: string | undefined) {
+  const s = (v ?? "").trim();
+  if (!s) return "GB"; // default: United Kingdom
+  if (s.length === 2) return s.toUpperCase();
+  return COUNTRY_NAMES[s.toLowerCase()] ?? guessCountry(s) ?? "GB";
+}
+
+function toDate(row: Record<string, string>) {
+  let raw = (row.starts_at ?? "").trim();
+  const d = (row.date ?? "").trim();
+  const t = (row.time ?? "").trim();
+  if (!raw) raw = d && t ? `${d} ${t}` : d || t;
+  if (!raw) return null;
+  // dd/mm/yyyy [hh:mm] -> yyyy-mm-dd hh:mm
+  const uk = raw.match(/^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})(.*)$/);
+  if (uk) raw = `${uk[3]}-${uk[2].padStart(2, "0")}-${uk[1].padStart(2, "0")}${uk[4]}`;
+  let when = new Date(raw.replace(/^(\d{4}-\d{2}-\d{2}) /, "$1T"));
+  if (isNaN(when.getTime())) when = new Date(raw);
+  return isNaN(when.getTime()) ? null : when;
+}
+
 export function parseFixtureCsv(text: string) {
-  const res = Papa.parse<Partial<Record<(typeof COLUMNS)[number], string>>>(text, {
+  const res = Papa.parse<Record<string, string>>(text, {
     header: true,
     skipEmptyLines: "greedy",
-    transformHeader: (h) => h.trim().toLowerCase(),
+    transformHeader: (h) => {
+      const k = h.trim().toLowerCase().replace(/\s+/g, " ");
+      return HEADER_MAP[k] ?? k;
+    },
   });
   const errors: string[] = [];
-  const headers = res.meta.fields ?? [];
-  const unknown = headers.filter((h) => !(COLUMNS as readonly string[]).includes(h));
-  const missing = REQUIRED.filter((h) => !headers.includes(h));
-  if (unknown.length) errors.push(`Unknown column${unknown.length > 1 ? "s" : ""}: ${unknown.join(", ")} (expected ${COLUMNS.join(", ")})`);
-  if (missing.length) errors.push(`Missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}`);
-  if (errors.length) return { rows: [], errors };
-
-  const rows = res.data.map((r, i) => {
+  const rows: {
+    player_a: string;
+    player_b: string;
+    tournament: string | null;
+    country: string;
+    format: string;
+    starts_at: string;
+  }[] = [];
+  res.data.forEach((r, i) => {
     const line = i + 2;
     const a = r.player_a?.trim();
     const b = r.player_b?.trim();
-    const when = new Date((r.starts_at ?? "").trim().replace(" ", "T"));
-    const fmt = (r.scored_in ?? "").trim().toLowerCase() || "legs";
+    if (!a && !b) return; // blank-ish row, skip quietly
+    const when = toDate(r);
+    if (!a || !b || !when) {
+      errors.push(`Row ${line} skipped: needs both players and a start date`);
+      return;
+    }
+    const fmtRaw = (r.scored_in ?? "").trim().toLowerCase();
     const tournament = r.tournament?.trim() || null;
-    if (!a || !b) errors.push(`Row ${line}: player_a and player_b are required`);
-    if (isNaN(when.getTime())) errors.push(`Row ${line}: starts_at "${r.starts_at ?? ""}" isn't a valid date`);
-    if (fmt !== "legs" && fmt !== "sets") errors.push(`Row ${line}: scored_in must be "legs" or "sets"`);
-    return {
-      player_a: a ?? "",
-      player_b: b ?? "",
+    rows.push({
+      player_a: a,
+      player_b: b,
       tournament,
-      country: r.host_country?.trim().toUpperCase() || guessCountry(tournament ?? "") || "GB",
-      format: fmt,
-      starts_at: isNaN(when.getTime()) ? "" : when.toISOString(),
-    };
+      country: toCountry(r.host_country),
+      format: fmtRaw.startsWith("leg") ? "legs" : "sets", // default: Sets
+      starts_at: when.toISOString(),
+    });
   });
-  if (!rows.length) errors.push("The file has no fixture rows");
+  if (!rows.length) errors.push("No fixtures found — check the file has player and date columns");
   return { rows, errors };
 }
 
@@ -63,13 +106,19 @@ export function CsvBulkUpload() {
     setStatus(null);
     try {
       const { rows, errors } = parseFixtureCsv(await file.text());
-      if (errors.length) {
+      if (!rows.length) {
         setStatus({ ok: false, messages: errors.slice(0, 8) });
         return;
       }
       const { error } = await supabase.from("matches").insert(rows);
       if (error) throw error;
-      setStatus({ ok: true, messages: [`Successfully loaded ${rows.length} fixture${rows.length === 1 ? "" : "s"} into the table`] });
+      setStatus({
+        ok: true,
+        messages: [
+          `Successfully loaded ${rows.length} fixture${rows.length === 1 ? "" : "s"} into the table`,
+          ...errors.slice(0, 5),
+        ],
+      });
       queryClient.invalidateQueries({ queryKey: ["matches"] });
       queryClient.invalidateQueries({ queryKey: ["tournaments"] });
     } catch (e) {
