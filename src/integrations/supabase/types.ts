@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       matches: {
         Row: {
+          archived: boolean
           country: string | null
           created_at: string
           external_event_id: string | null
@@ -31,6 +32,7 @@ export type Database = {
           tournament: string | null
         }
         Insert: {
+          archived?: boolean
           country?: string | null
           created_at?: string
           external_event_id?: string | null
@@ -46,6 +48,7 @@ export type Database = {
           tournament?: string | null
         }
         Update: {
+          archived?: boolean
           country?: string | null
           created_at?: string
           external_event_id?: string | null
