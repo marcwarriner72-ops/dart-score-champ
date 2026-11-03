@@ -32,12 +32,12 @@
   --color-ring: var(--ring);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
-  --font-display: "Barlow Condensed", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Bebas Neue", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
 }
 
 :root {
-  --radius: 0.9rem;
+  --radius: 0.25rem;
   --background: oklch(0.16 0.015 160);
   --foreground: oklch(0.97 0.005 150);
   --card: oklch(0.21 0.018 162);
@@ -238,3 +238,10 @@
     animation: none;
   }
 }
+
+/* Race to the Prem style taskbar */
+:root { --retro-highlight: oklch(1 0 0 / 0.18); --retro-shadow: oklch(0 0 0 / 0.6); }
+.race-taskbar, .retro-start { box-shadow: inset 1px 1px 0 var(--retro-highlight), inset -1px -1px 0 var(--retro-shadow); }
+@keyframes dart-run { from { left: -2.5rem; } to { left: 100%; } }
+.dart-runner { animation: dart-run 10s linear infinite; }
+@media (prefers-reduced-motion: reduce) { .dart-runner { animation: none; display: none; } }
