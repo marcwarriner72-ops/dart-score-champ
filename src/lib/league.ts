@@ -13,6 +13,7 @@ export type Match = {
   format?: string | null;
   country?: string | null;
   external_event_id?: string | null;
+  total_180s?: number | null;
 };
 
 /** Preset PDC World Series events offered in the admin tournament dropdown. */
