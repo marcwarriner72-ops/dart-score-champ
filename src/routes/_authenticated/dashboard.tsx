@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Target, Trophy, ListChecks } from "lucide-react";
+import { PartyPopper, Target, Trophy } from "lucide-react";
 import { AppShell } from "@/components/AppShell";
 import { useMemo } from "react";
 import {
@@ -54,7 +54,7 @@ function Dashboard() {
   const board = useMemo(
     () =>
       standings
-        .filter((r) => r.tournament === currentTournament)
+        .filter((r) => hasActive && r.tournament === currentTournament)
         .slice()
         .sort((a, b) => (b.points ?? 0) - (a.points ?? 0)),
     [standings, currentTournament],
