@@ -82,8 +82,8 @@ export function AppShell({
   usePushListener();
 
   const groups = buildGroups(!!isAdmin, toPredict);
-  const activeGroup = groups.find((g) => g.items.some((i) => pathname.startsWith(i.to))) ?? groups[0];
-  const activeItem = activeGroup.items.find((i) => pathname.startsWith(i.to)) ?? activeGroup.items[0];
+  const activeGroup: NavGroup = groups.find((g) => g.items.some((i) => pathname.startsWith(i.to))) ?? groups[0]!;
+  const activeItem: NavItem = activeGroup.items.find((i) => pathname.startsWith(i.to)) ?? activeGroup.items[0]!;
 
   async function signOut() {
     await queryClient.cancelQueries();
