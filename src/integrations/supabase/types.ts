@@ -116,6 +116,36 @@ export type Database = {
         }
         Relationships: []
       }
+      pdc_players: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          merit_ranking: number | null
+          name: string
+          nickname: string | null
+          player_id: string
+          wiki_title: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          merit_ranking?: number | null
+          name: string
+          nickname?: string | null
+          player_id: string
+          wiki_title?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          merit_ranking?: number | null
+          name?: string
+          nickname?: string | null
+          player_id?: string
+          wiki_title?: string | null
+        }
+        Relationships: []
+      }
       predictions: {
         Row: {
           created_at: string

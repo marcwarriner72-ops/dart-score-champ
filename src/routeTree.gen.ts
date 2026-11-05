@@ -19,6 +19,8 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/c
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedMediaRouteImport } from './routes/_authenticated/media'
+import { Route as AuthenticatedPdcCalendarRouteImport } from './routes/_authenticated/pdc-calendar'
+import { Route as AuthenticatedPdcPlayersRouteImport } from './routes/_authenticated/pdc-players'
 import { Route as AuthenticatedPredictRouteImport } from './routes/_authenticated/predict'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
@@ -74,6 +76,17 @@ const AuthenticatedMediaRoute = AuthenticatedMediaRouteImport.update({
   path: '/media',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPdcCalendarRoute =
+  AuthenticatedPdcCalendarRouteImport.update({
+    id: '/pdc-calendar',
+    path: '/pdc-calendar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPdcPlayersRoute = AuthenticatedPdcPlayersRouteImport.update({
+  id: '/pdc-players',
+  path: '/pdc-players',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPredictRoute = AuthenticatedPredictRouteImport.update({
   id: '/predict',
   path: '/predict',
@@ -105,6 +118,8 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/media': typeof AuthenticatedMediaRoute
+  '/pdc-calendar': typeof AuthenticatedPdcCalendarRoute
+  '/pdc-players': typeof AuthenticatedPdcPlayersRoute
   '/predict': typeof AuthenticatedPredictRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/results': typeof AuthenticatedResultsRoute
@@ -120,6 +135,8 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/media': typeof AuthenticatedMediaRoute
+  '/pdc-calendar': typeof AuthenticatedPdcCalendarRoute
+  '/pdc-players': typeof AuthenticatedPdcPlayersRoute
   '/predict': typeof AuthenticatedPredictRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/results': typeof AuthenticatedResultsRoute
@@ -137,6 +154,8 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/media': typeof AuthenticatedMediaRoute
+  '/_authenticated/pdc-calendar': typeof AuthenticatedPdcCalendarRoute
+  '/_authenticated/pdc-players': typeof AuthenticatedPdcPlayersRoute
   '/_authenticated/predict': typeof AuthenticatedPredictRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/results': typeof AuthenticatedResultsRoute
@@ -154,6 +173,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/media'
+    | '/pdc-calendar'
+    | '/pdc-players'
     | '/predict'
     | '/profile'
     | '/results'
@@ -169,6 +190,8 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/leaderboard'
     | '/media'
+    | '/pdc-calendar'
+    | '/pdc-players'
     | '/predict'
     | '/profile'
     | '/results'
@@ -185,6 +208,8 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/leaderboard'
     | '/_authenticated/media'
+    | '/_authenticated/pdc-calendar'
+    | '/_authenticated/pdc-players'
     | '/_authenticated/predict'
     | '/_authenticated/profile'
     | '/_authenticated/results'
@@ -271,6 +296,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMediaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/pdc-calendar': {
+      id: '/_authenticated/pdc-calendar'
+      path: '/pdc-calendar'
+      fullPath: '/pdc-calendar'
+      preLoaderRoute: typeof AuthenticatedPdcCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pdc-players': {
+      id: '/_authenticated/pdc-players'
+      path: '/pdc-players'
+      fullPath: '/pdc-players'
+      preLoaderRoute: typeof AuthenticatedPdcPlayersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/predict': {
       id: '/_authenticated/predict'
       path: '/predict'
@@ -308,6 +347,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedMediaRoute: typeof AuthenticatedMediaRoute
+  AuthenticatedPdcCalendarRoute: typeof AuthenticatedPdcCalendarRoute
+  AuthenticatedPdcPlayersRoute: typeof AuthenticatedPdcPlayersRoute
   AuthenticatedPredictRoute: typeof AuthenticatedPredictRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedResultsRoute: typeof AuthenticatedResultsRoute
@@ -320,6 +361,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedMediaRoute: AuthenticatedMediaRoute,
+  AuthenticatedPdcCalendarRoute: AuthenticatedPdcCalendarRoute,
+  AuthenticatedPdcPlayersRoute: AuthenticatedPdcPlayersRoute,
   AuthenticatedPredictRoute: AuthenticatedPredictRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedResultsRoute: AuthenticatedResultsRoute,

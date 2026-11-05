@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv, Swords, Users } from "lucide-react";
+import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv, Swords, Users, CalendarDays, UserRound } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +40,14 @@ function buildGroups(isAdmin: boolean, toPredict: number): NavGroup[] {
       items: [
         { to: "/chat", icon: MessageCircle, label: "Live Chatroom", short: "Chat" },
         { to: "/media", icon: Tv, label: "Sports Media Dock", short: "Media" },
+      ],
+    },
+    {
+      label: "PDC Center",
+      icon: CalendarDays,
+      items: [
+        { to: "/pdc-calendar", icon: CalendarDays, label: "PDC Calendar", short: "Calendar" },
+        { to: "/pdc-players", icon: UserRound, label: "PDC Players", short: "Players" },
       ],
     },
     {
