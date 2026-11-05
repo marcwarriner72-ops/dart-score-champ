@@ -196,12 +196,6 @@ function LeaderboardPage() {
         </section>
       )}
 
-      <div className="panel mt-6 p-4 text-sm text-muted-foreground">
-        <p className="font-display text-lg font-bold uppercase text-foreground">Scoring</p>
-        <p className="mt-1">3 pts — correct winner and exact leg score</p>
-        <p>1 pt — correct winner, wrong leg score</p>
-        <p>0 pts — wrong winner</p>
-      </div>
     </AppShell>
   );
 }

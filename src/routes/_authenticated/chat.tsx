@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ImagePlus, MessageCircle, Send, Trash2, X } from "lucide-react";
+import { ImagePlus, MessageCircle, Send, SmilePlus, Trash2, X, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/AppShell";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,15 @@ export const Route = createFileRoute("/_authenticated/chat")({
     ],
   }),
 });
+
+const REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "🙏", "🎯"];
+const NAME_COLORS = ["text-primary", "text-gold", "text-accent", "text-destructive", "text-chart-2", "text-chart-3", "text-chart-4", "text-chart-5"];
+function nameColor(id: string) {
+  let h = 0;
+  for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return NAME_COLORS[h % NAME_COLORS.length];
+}
+type Reaction = { id: string; message_id: string; user_id: string; emoji: string };
 
 type Message = {
   id: string;
@@ -126,6 +135,95 @@ function ChatPage() {
   });
 
   const { data: profiles = [] } = useProfiles();
+  const [pickerFor, setPickerFor] = useState<string | null>(null);
+  const [clearOpen, setClearOpen] = useState(false);
+  const [clearText, setClearText] = useState("");
+  const [typers, setTypers] = useState<Record<string, number>>({});
+  const typingChannel = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  const lastTyped = useRef(0);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { data: reactions = [] } = useQuery({
+    queryKey: ["message-reactions"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("message_reactions")
+        .select("id, message_id, user_id, emoji");
+      if (error) throw error;
+      return data as Reaction[];
+    },
+  });
+  const reactionsByMsg = useMemo(() => {
+    const m = new Map<string, Reaction[]>();
+    for (const r of reactions) m.set(r.message_id, [...(m.get(r.message_id) ?? []), r]);
+    return m;
+  }, [reactions]);
+
+  useEffect(() => {
+    const ch = supabase
+      .channel(`reactions-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, () =>
+        queryClient.invalidateQueries({ queryKey: ["message-reactions"] }),
+      )
+      .subscribe();
+    const typing = supabase
+      .channel("league-chat-typing")
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        const id = payload?.user_id as string | undefined;
+        if (!id) return;
+        setTypers((t) => ({ ...t, [id]: Date.now() }));
+      })
+      .subscribe();
+    typingChannel.current = typing;
+    const tick = setInterval(() => {
+      setTypers((t) => {
+        const now = Date.now();
+        const next = Object.fromEntries(Object.entries(t).filter(([, v]) => now - v < 3500));
+        return Object.keys(next).length === Object.keys(t).length ? t : next;
+      });
+    }, 1000);
+    return () => {
+      clearInterval(tick);
+      supabase.removeChannel(ch);
+      supabase.removeChannel(typing);
+    };
+  }, [queryClient]);
+
+  function notifyTyping() {
+    if (!user) return;
+    const now = Date.now();
+    if (now - lastTyped.current < 1500) return;
+    lastTyped.current = now;
+    void typingChannel.current?.send({ type: "broadcast", event: "typing", payload: { user_id: user.id } });
+  }
+
+  async function react(messageId: string, emoji: string) {
+    if (!user) return;
+    setPickerFor(null);
+    const mine = reactions.find((r) => r.message_id === messageId && r.user_id === user.id);
+    const res = mine
+      ? mine.emoji === emoji
+        ? await supabase.from("message_reactions").delete().eq("id", mine.id)
+        : await supabase.from("message_reactions").update({ emoji }).eq("id", mine.id)
+      : await supabase.from("message_reactions").insert({ message_id: messageId, user_id: user.id, emoji });
+    if (res.error) toast.error("Couldn't save reaction");
+    queryClient.invalidateQueries({ queryKey: ["message-reactions"] });
+  }
+
+  async function clearAll() {
+    setClearOpen(false);
+    setClearText("");
+    const paths = messages.map((m) => m.image_path).filter(Boolean) as string[];
+    const { error } = await supabase.from("messages").delete().not("id", "is", null);
+    if (error) {
+      toast.error("Could not clear chat");
+      return;
+    }
+    if (paths.length) await supabase.storage.from("chat-images").remove(paths);
+    toast.success("All chat messages cleared");
+    queryClient.invalidateQueries({ queryKey: ["messages"] });
+    queryClient.invalidateQueries({ queryKey: ["message-reactions"] });
+  }
 
   const people = useMemo(() => {
     const map = new Map<string, { name: string; avatar: string | null }>();
@@ -239,6 +337,17 @@ function ChatPage() {
           pdc.tv
         </a>
       </div>
+      {isAdmin && (
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          className="mb-3 w-full"
+          onClick={() => setClearOpen(true)}
+        >
+          <ShieldAlert className="size-4" /> Clear All Chat Data
+        </Button>
+      )}
 
       <div className="flex flex-col gap-3 pb-28">
         {isLoading ? (
@@ -254,10 +363,14 @@ function ChatPage() {
             const mine = m.user_id === user?.id;
             const person = people.get(m.user_id);
             const canDelete = mine || !!isAdmin;
+            const msgReactions = reactionsByMsg.get(m.id) ?? [];
+            const counts: Record<string, number> = {};
+            for (const r of msgReactions) counts[r.emoji] = (counts[r.emoji] ?? 0) + 1;
+            const myReaction = msgReactions.find((r) => r.user_id === user?.id)?.emoji;
             return (
               <div
                 key={m.id}
-                className={`flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}
+                className={`group flex items-end gap-2 ${mine ? "flex-row-reverse" : "flex-row"}`}
               >
                 <PlayerAvatar
                   path={person?.avatar}
@@ -265,41 +378,76 @@ function ChatPage() {
                   className="size-8 text-[10px]"
                 />
                 <div className={`flex min-w-0 flex-col ${mine ? "items-end" : "items-start"}`}>
-                  <span className="flex items-center gap-2 px-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className={`px-1 text-[11px] font-bold uppercase tracking-wide ${mine ? "text-muted-foreground" : nameColor(m.user_id)}`}>
                     {mine ? "You" : (person?.name ?? "Player")}
-                    {" · "}
-                    {new Date(m.created_at).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
+                  </span>
+                  <div
+                    className={`relative max-w-[16rem] rounded-2xl px-3.5 pb-1.5 pt-2 text-sm ${
+                      mine
+                        ? "rounded-br-sm bg-primary text-primary-foreground"
+                        : "rounded-bl-sm bg-secondary text-secondary-foreground"
+                    } ${msgReactions.length ? "mb-3" : ""}`}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      setPickerFor(m.id);
+                    }}
+                    onTouchStart={() => {
+                      pressTimer.current = setTimeout(() => setPickerFor(m.id), 450);
+                    }}
+                    onTouchEnd={() => pressTimer.current && clearTimeout(pressTimer.current)}
+                    onTouchMove={() => pressTimer.current && clearTimeout(pressTimer.current)}
+                  >
+                    {m.content && <p className="whitespace-pre-wrap break-words">{m.content}</p>}
+                    {m.image_path && <ChatImage path={m.image_path} onOpen={setLightbox} />}
+                    <span className="mt-0.5 flex items-center justify-end gap-2 text-[10px] tabular-nums opacity-70">
+                      {new Date(m.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    {msgReactions.length > 0 && (
+                      <div className="absolute -bottom-3 right-2 flex items-center gap-0.5 rounded-full border border-border bg-card px-1.5 py-0.5 text-xs text-foreground shadow">
+                        {Object.entries(counts).map(([e, n]) => (
+                          <button key={e} type="button" onClick={() => react(m.id, e)} className="flex items-center">
+                            {e}
+                            {n > 1 && <span className="ml-0.5 text-[10px] tabular-nums">{n}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 px-1 text-muted-foreground">
+                    <button type="button" aria-label="React" onClick={() => setPickerFor(pickerFor === m.id ? null : m.id)}>
+                      <SmilePlus className="size-3.5" />
+                    </button>
                     {canDelete && (
-                      <button
-                        type="button"
-                        aria-label="Delete message"
-                        onClick={() => setToDelete(m)}
-                        className="text-muted-foreground transition-transform active:scale-90"
-                      >
+                      <button type="button" aria-label="Delete message" onClick={() => setToDelete(m)}>
                         <Trash2 className="size-3.5" />
                       </button>
                     )}
-                  </span>
-                  {m.content && (
-                    <p
-                      className={`max-w-[16rem] whitespace-pre-wrap break-words rounded-2xl px-3.5 py-2 text-sm ${
-                        mine
-                          ? "rounded-br-sm bg-primary text-primary-foreground"
-                          : "rounded-bl-sm bg-secondary text-secondary-foreground"
-                      }`}
-                    >
-                      {m.content}
-                    </p>
+                  </div>
+                  {pickerFor === m.id && (
+                    <div className="flex gap-1 rounded-full border border-border bg-card px-2 py-1 shadow-lg">
+                      {REACTIONS.map((e) => (
+                        <button key={e} type="button" onClick={() => react(m.id, e)} className={`rounded-full p-1 text-lg transition-transform hover:scale-125 ${myReaction === e ? "bg-secondary" : ""}`}>
+                          {e}
+                        </button>
+                      ))}
+                    </div>
                   )}
-                  {m.image_path && <ChatImage path={m.image_path} onOpen={setLightbox} />}
                 </div>
               </div>
             );
           })
         )}
+        {(() => {
+          const names = Object.keys(typers)
+            .filter((id) => id !== user?.id)
+            .map((id) => people.get(id)?.name ?? "Someone");
+          if (!names.length) return null;
+          return (
+            <p className="animate-pulse px-2 text-xs italic text-muted-foreground">
+              {names.length === 1 ? `${names[0]} is typing…` : `${names.slice(0, 2).join(" & ")} are typing…`}
+            </p>
+          );
+        })()}
         <div ref={bottomRef} />
       </div>
 
@@ -348,7 +496,10 @@ function ChatPage() {
           />
           <Input
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => {
+              setDraft(e.target.value);
+              notifyTyping();
+            }}
             placeholder={photo ? "Add a caption…" : "Say something…"}
             maxLength={1000}
             aria-label="Message"
@@ -370,7 +521,7 @@ function ChatPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete this message?</AlertDialogTitle>
             <AlertDialogDescription>
-              It will disappear for everyone in the league. This can't be undone.
+              Are you sure you want to delete this message? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -383,6 +534,24 @@ function ChatPage() {
               }}
             >
               Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={clearOpen} onOpenChange={(o) => { setClearOpen(o); if (!o) setClearText(""); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear ALL chat data?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes every message, photo and reaction for everyone. Type DELETE to confirm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input value={clearText} onChange={(e) => setClearText(e.target.value)} placeholder="Type DELETE" aria-label="Confirm clear" />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction disabled={clearText !== "DELETE"} onClick={() => void clearAll()}>
+              Clear everything
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
