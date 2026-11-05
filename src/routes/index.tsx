@@ -37,7 +37,7 @@ function Index() {
         </h1>
         <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
           Pick the winner and the exact leg score for every match. Three points for a bullseye
-          call, one for the right winner. Winner takes the bragging rights.
+          call, one for the right winner, plus 5 bonus points for guessing the exact number of 180s. Winner takes the bragging rights.
         </p>
       </div>
 
@@ -46,7 +46,7 @@ function Index() {
           Upcoming matches, one tap each.
         </Feature>
         <Feature icon={<Target className="size-5" />} title="Exact-score bonus">
-          3 pts exact, 1 pt winner only.
+          3 pts exact, 1 pt winner only, +5 for exact 180s.
         </Feature>
         <Feature icon={<Trophy className="size-5" />} title="Live leaderboard">
           Updated the moment results land.

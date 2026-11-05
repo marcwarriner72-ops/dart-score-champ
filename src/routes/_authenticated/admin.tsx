@@ -188,6 +188,9 @@ function AdminPage() {
   const { data: user } = useSession();
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin(user?.id);
   const { data: matches = [] } = useMatches();
+  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "finished">("all");
+  const [tourFilter, setTourFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!roleLoading && isAdmin === false) navigate({ to: "/dashboard", replace: true });
@@ -201,8 +204,19 @@ function AdminPage() {
     );
   }
 
-  const active = matches.filter((m) => m.status === "upcoming");
-  const finished = matches
+  const q = search.trim().toLowerCase();
+  const tournamentNames = Array.from(
+    new Set(matches.map((m) => m.tournament?.trim() || "Other fixtures")),
+  ).sort();
+  const visible = matches.filter((m) => {
+    if (tourFilter !== "all" && (m.tournament?.trim() || "Other fixtures") !== tourFilter) return false;
+    if (!q) return true;
+    return [m.player_a, m.player_b, m.round, m.match_label, m.session]
+      .filter(Boolean)
+      .some((s) => String(s).toLowerCase().includes(q));
+  });
+  const active = statusFilter === "finished" ? [] : visible.filter((m) => m.status === "upcoming");
+  const finished = (statusFilter === "upcoming" ? [] : visible)
     .filter((m) => m.status === "finished")
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
   const archiveGroups: { name: string; matches: Match[] }[] = [];
@@ -217,6 +231,34 @@ function AdminPage() {
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
       <CsvBulkUpload />
+
+      <section className="panel mt-6 space-y-2 p-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Filter fixtures</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+            <SelectTrigger className="h-10 w-full" aria-label="Filter by status"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All fixtures</SelectItem>
+              <SelectItem value="upcoming">Active only</SelectItem>
+              <SelectItem value="finished">Completed only</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={tourFilter} onValueChange={setTourFilter}>
+            <SelectTrigger className="h-10 w-full" aria-label="Filter by tournament"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tournaments</SelectItem>
+              {tournamentNames.map((n) => (
+                <SelectItem key={n} value={n}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2">
+          <Input placeholder="Search player, round, label…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-10" />
+          <Button variant="secondary" className="h-10" onClick={() => { setStatusFilter("all"); setTourFilter("all"); setSearch(""); }}>Clear</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Showing {visible.length} of {matches.length} fixtures</p>
+      </section>
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
       <p className="text-xs text-muted-foreground">
@@ -472,6 +514,9 @@ function ResultForm({ match }: { match: Match }) {
   const [format, setFormat] = useState(match.format === "sets" ? "sets" : "legs");
   const [country, setCountry] = useState(match.country ?? guessCountry(match.tournament) ?? "GB");
   const [t180, setT180] = useState(match.total_180s == null ? "" : String(match.total_180s));
+  const [session, setSession] = useState(match.session ?? "");
+  const [round, setRound] = useState(match.round ?? "");
+  const [mlabel, setMlabel] = useState(match.match_label ?? "");
   const [confirmResult, setConfirmResult] = useState(false);
   const [confirmDetails, setConfirmDetails] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -524,6 +569,9 @@ function ResultForm({ match }: { match: Match }) {
           starts_at: new Date(startsAt).toISOString(),
           format,
           country,
+          session: session.trim() || null,
+          round: round.trim() || null,
+          match_label: mlabel.trim() || null,
         })
         .eq("id", match.id);
       if (error) throw error;
@@ -657,7 +705,20 @@ function ResultForm({ match }: { match: Match }) {
           <TournamentPicker id={`tour-${match.id}`} value={tournament} onChange={setTournament} />
           <CountryPicker id={`country-${match.id}`} value={country} onChange={setCountry} />
           <FormatPicker id={`format-${match.id}`} value={format} onChange={setFormat} />
-
+          <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-1.5">
+              <Label htmlFor={`ses-${match.id}`}>Session</Label>
+              <Input id={`ses-${match.id}`} value={session} onChange={(e) => setSession(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`rnd-${match.id}`}>Round</Label>
+              <Input id={`rnd-${match.id}`} value={round} onChange={(e) => setRound(e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor={`lbl-${match.id}`}>Match label</Label>
+              <Input id={`lbl-${match.id}`} value={mlabel} onChange={(e) => setMlabel(e.target.value)} />
+            </div>
+          </div>
 
           <div className="space-y-1.5">
             <Label htmlFor={`when-${match.id}`}>Starts at</Label>
@@ -858,7 +919,7 @@ function AdminPredictions({ match }: { match: Match }) {
   const queryClient = useQueryClient();
   const { data: profiles = [] } = useProfiles();
   const [open, setOpen] = useState(false);
-  const [drafts, setDrafts] = useState<Record<string, { winner: string; a: string; b: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { winner: string; a: string; b: string; g: string }>>({});
   const [confirmFor, setConfirmFor] = useState<string | null>(null);
   const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
@@ -892,11 +953,12 @@ function AdminPredictions({ match }: { match: Match }) {
         winner: existing?.predicted_winner ?? "",
         a: existing ? String(existing.score_a) : "",
         b: existing ? String(existing.score_b) : "",
+        g: existing?.guess_180s == null ? "" : String(existing.guess_180s),
       }
     );
   };
 
-  const setDraft = (userId: string, patch: Partial<{ winner: string; a: string; b: string }>) =>
+  const setDraft = (userId: string, patch: Partial<{ winner: string; a: string; b: string; g: string }>) =>
     setDrafts((d) => ({ ...d, [userId]: { ...draftFor(userId), ...patch } }));
 
   const save = useMutation({
@@ -914,6 +976,7 @@ function AdminPredictions({ match }: { match: Match }) {
           predicted_winner: d.winner,
           score_a: sa,
           score_b: sb,
+          guess_180s: d.g === "" ? null : Number(d.g),
         },
         { onConflict: "match_id,user_id" },
       );
@@ -1025,6 +1088,14 @@ function AdminPredictions({ match }: { match: Match }) {
                   <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
                     {matchFormatLabel(match)}
                   </span>
+                  <Input
+                    inputMode="numeric"
+                    className="h-10 w-14 text-center font-display text-lg"
+                    value={d.g}
+                    placeholder="180s"
+                    aria-label={`180s guess for ${p.display_name}`}
+                    onChange={(e) => setDraft(p.id, { g: e.target.value.replace(/\D/g, "").slice(0, 2) })}
+                  />
                   <Button
                     className="ml-auto h-10 font-bold uppercase"
                     onClick={() => setConfirmFor(p.id)}
