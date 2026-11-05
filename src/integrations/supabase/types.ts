@@ -22,10 +22,13 @@ export type Database = {
           external_event_id: string | null
           format: string
           id: string
+          match_label: string | null
           player_a: string
           player_b: string
+          round: string | null
           score_a: number | null
           score_b: number | null
+          session: string | null
           starts_at: string
           status: string
           total_180s: number | null
@@ -38,10 +41,13 @@ export type Database = {
           external_event_id?: string | null
           format?: string
           id?: string
+          match_label?: string | null
           player_a: string
           player_b: string
+          round?: string | null
           score_a?: number | null
           score_b?: number | null
+          session?: string | null
           starts_at: string
           status?: string
           total_180s?: number | null
@@ -54,10 +60,13 @@ export type Database = {
           external_event_id?: string | null
           format?: string
           id?: string
+          match_label?: string | null
           player_a?: string
           player_b?: string
+          round?: string | null
           score_a?: number | null
           score_b?: number | null
+          session?: string | null
           starts_at?: string
           status?: string
           total_180s?: number | null

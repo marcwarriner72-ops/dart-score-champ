@@ -14,6 +14,9 @@ export type Match = {
   country?: string | null;
   external_event_id?: string | null;
   total_180s?: number | null;
+  session?: string | null;
+  round?: string | null;
+  match_label?: string | null;
   /** Set when an admin archives & resets the competition. */
   archived?: boolean;
 };

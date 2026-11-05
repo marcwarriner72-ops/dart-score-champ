@@ -236,7 +236,7 @@ function PredictionCard({
     const b = Number(scoreB);
     if (!winner) return "Pick a winner";
     if (scoreA === "" || scoreB === "" || !Number.isInteger(a) || !Number.isInteger(b) || a < 0 || b < 0)
-      return "Enter a valid leg score";
+      return `Enter a valid ${matchFormatLabel(match).toLowerCase()} score`;
     if (a === b) return "A darts match can't end level";
     if ((a > b ? "a" : "b") !== winner) return "Your leg score doesn't match your chosen winner";
     return null;
@@ -254,83 +254,130 @@ function PredictionCard({
   const winnerName = winner === "a" ? match.player_a : match.player_b;
   const isLive = new Date(match.starts_at).getTime() <= Date.now();
 
+  const unit = matchFormatLabel(match).toUpperCase();
+  const when = new Date(match.starts_at);
+  const meta = [match.round, match.match_label].filter(Boolean).join(" · ");
+  const n180 = guess180s === "" ? null : Number(guess180s);
+
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-800 bg-slate-950/90 p-4 shadow-2xl backdrop-blur-md">
+    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 shadow-2xl backdrop-blur-md">
       <div aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_12px_var(--primary)]" />
-      <div className="flex items-center justify-between gap-2">
-        <p className="flex min-w-0 items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-          <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
-          <span className="truncate">{match.tournament || "Match"}</span>
-        </p>
-        <div className="flex shrink-0 items-center gap-1.5">
-          {isLive && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-destructive">
-              <span className="relative flex size-2">
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive opacity-75" />
-                <span className="relative inline-flex size-2 rounded-full bg-destructive" />
-              </span>
-              Live
+
+      {/* Header */}
+      <div className="border-b border-slate-800 bg-slate-900/50 px-4 pb-3 pt-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-primary">
+              <CountryFlag code={match.country ?? guessCountry(match.tournament)} />
+              <span className="truncate">{match.tournament || "Match"}</span>
+            </p>
+            {meta && <p className="mt-0.5 truncate font-display text-lg uppercase leading-tight">{meta}</p>}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1">
+            <span className="rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-widest text-primary">
+              {unit}
             </span>
-          )}
-          {existing && (
-            <span className="rounded-full bg-primary/15 px-2 py-1 text-[10px] font-bold uppercase text-primary">Locked in</span>
-          )}
+            {isLive && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-destructive">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-destructive opacity-75" />
+                  <span className="relative inline-flex size-2 rounded-full bg-destructive" />
+                </span>
+                Live
+              </span>
+            )}
+            {existing && !isLive && (
+              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">Locked in</span>
+            )}
+          </div>
         </div>
-      </div>
-      <p className="mt-1 text-xs tabular-nums text-muted-foreground">{formatDate(match.starts_at)}</p>
-
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <WinnerButton active={winner === "a"} label={match.player_a} onClick={() => setWinner("a")} />
-        <WinnerButton active={winner === "b"} label={match.player_b} onClick={() => setWinner("b")} />
-      </div>
-
-      <div className="mt-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/60 p-2">
-        <Input
-          inputMode="numeric"
-          className="h-12 border-slate-800 bg-slate-950 text-center font-display text-2xl tabular-nums"
-          value={scoreA}
-          onChange={(e) => setScoreA(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          aria-label={`Score for ${match.player_a}`}
-          placeholder="0"
-        />
-        <span className="px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-          {matchFormatLabel(match).toLowerCase()}
-        </span>
-        <Input
-          inputMode="numeric"
-          className="h-12 border-slate-800 bg-slate-950 text-center font-display text-2xl tabular-nums"
-          value={scoreB}
-          onChange={(e) => setScoreB(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          aria-label={`Score for ${match.player_b}`}
-          placeholder="0"
-        />
+        <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
+          {[
+            ["Date", when.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" })],
+            ["Session", match.session || "—"],
+            ["Start", when.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })],
+          ].map(([k, v]) => (
+            <div key={k} className="rounded-lg bg-slate-950/70 px-2 py-1.5">
+              <dt className="text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">{k}</dt>
+              <dd className="truncate text-xs font-bold tabular-nums">{v}</dd>
+            </div>
+          ))}
+        </dl>
       </div>
 
-      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-3 py-2">
-        <label htmlFor={`g180-${match.id}`} className="text-xs font-semibold uppercase tracking-wide">
-          Total 180s in match <span className="block text-[10px] font-normal normal-case text-accent">Exact guess = +5 bonus (optional)</span>
-        </label>
-        <Input
-          id={`g180-${match.id}`}
-          inputMode="numeric"
-          className="h-11 w-16 border-slate-800 bg-slate-950 text-center font-display text-xl tabular-nums"
-          value={guess180s}
-          onChange={(e) => setGuess180s(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          placeholder="–"
-        />
+      {/* Scoreboard */}
+      <div className="p-4">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Tap your winner, then enter the score</p>
+        <div className="grid grid-cols-[1fr_auto_1fr] items-stretch gap-2">
+          {(["a", "b"] as const).map((side, i) => {
+            const name = side === "a" ? match.player_a : match.player_b;
+            const val = side === "a" ? scoreA : scoreB;
+            const set = side === "a" ? setScoreA : setScoreB;
+            const active = winner === side;
+            const card = (
+              <div
+                key={side}
+                className={`flex flex-col rounded-xl border p-2 transition-all ${active ? "border-primary bg-primary/10 shadow-[0_0_18px_-6px_var(--primary)]" : "border-slate-800 bg-slate-900/60"}`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setWinner(side)}
+                  className="min-h-10 text-center text-sm font-bold leading-tight active:scale-95"
+                >
+                  <span className="block text-[9px] font-semibold uppercase tracking-widest text-muted-foreground">
+                    Player {i + 1} {active && "· Winner"}
+                  </span>
+                  {name}
+                </button>
+                <Input
+                  inputMode="numeric"
+                  className="mt-2 h-14 border-slate-800 bg-slate-950 text-center font-display text-3xl tabular-nums"
+                  value={val}
+                  onChange={(e) => set(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                  aria-label={`${unit} for ${name}`}
+                  placeholder="0"
+                />
+              </div>
+            );
+            return i === 0 ? (
+              [card, (
+                <div key="vs" className="flex flex-col items-center justify-end pb-4">
+                  <span className="text-[10px] font-black text-muted-foreground">VS</span>
+                  <span className="mt-1 text-[9px] font-bold uppercase tracking-widest text-primary">{unit}</span>
+                </div>
+              )]
+            ) : card;
+          })}
+        </div>
+
+        {/* 180s */}
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent/5 px-3 py-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide">Number of 180s</p>
+            <p className="text-[10px] text-accent">Exact guess = +5 bonus · optional</p>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button type="button" variant="outline" size="icon" className="size-9 border-slate-800" onClick={() => setGuess180s(String(Math.max(0, (n180 ?? 0) - 1)))} aria-label="Fewer 180s">−</Button>
+            <Input
+              inputMode="numeric"
+              className="h-10 w-14 border-slate-800 bg-slate-950 text-center font-display text-xl tabular-nums"
+              value={guess180s}
+              onChange={(e) => setGuess180s(e.target.value.replace(/\D/g, "").slice(0, 2))}
+              placeholder="–"
+              aria-label="Number of 180s in match"
+            />
+            <Button type="button" variant="outline" size="icon" className="size-9 border-slate-800" onClick={() => setGuess180s(String(Math.min(99, (n180 ?? -1) + 1)))} aria-label="More 180s">+</Button>
+          </div>
+        </div>
+
+        <Button
+          className="mt-4 h-12 w-full font-bold uppercase tracking-wider transition-transform active:scale-[0.98]"
+          onClick={openConfirm}
+          disabled={save.isPending}
+        >
+          {existing ? "Update prediction" : "Lock in prediction"}
+        </Button>
       </div>
-
-      <p className="mt-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-        This match is played in {matchFormatLabel(match).toLowerCase()}
-      </p>
-
-      <Button
-        className="mt-3 h-11 w-full font-bold uppercase transition-transform active:scale-[0.98]"
-        onClick={openConfirm}
-        disabled={save.isPending}
-      >
-        {existing ? "Update prediction" : "Submit prediction"}
-      </Button>
 
       <AlertDialog open={confirming} onOpenChange={setConfirming}>
         <AlertDialogContent className="max-w-[20rem] rounded-xl">

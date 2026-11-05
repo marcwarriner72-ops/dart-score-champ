@@ -352,6 +352,9 @@ function NewMatchForm() {
     if (guess) setCountry(guess);
   }
 
+  const [session, setSession] = useState("");
+  const [round, setRound] = useState("");
+  const [label, setLabel] = useState("");
   const create = useMutation({
     mutationFn: async () => {
       if (!playerA.trim() || !playerB.trim()) throw new Error("Both players are required");
@@ -363,11 +366,17 @@ function NewMatchForm() {
         starts_at: new Date(startsAt).toISOString(),
         format,
         country,
+        session: session.trim() || null,
+        round: round.trim() || null,
+        match_label: label.trim() || null,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       toast.success("Match added");
+      setSession("");
+      setRound("");
+      setLabel("");
       setPlayerA("");
       setPlayerB("");
       setTournament("");
@@ -386,17 +395,31 @@ function NewMatchForm() {
       <h2 className="font-display text-xl font-bold uppercase">Add a match</h2>
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
-          <Label htmlFor="pa">Player A</Label>
+          <Label htmlFor="pa">Player 1</Label>
           <Input id="pa" value={playerA} onChange={(e) => setPlayerA(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="pb">Player B</Label>
+          <Label htmlFor="pb">Player 2</Label>
           <Input id="pb" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
         </div>
       </div>
       <TournamentPicker id="tour" value={tournament} onChange={pickTournament} />
       <CountryPicker id="country" value={country} onChange={setCountry} />
       <FormatPicker id="format" value={format} onChange={setFormat} />
+      <div className="grid grid-cols-3 gap-2">
+        <div className="space-y-1.5">
+          <Label htmlFor="session">Session</Label>
+          <Input id="session" value={session} onChange={(e) => setSession(e.target.value)} placeholder="Evening" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="round">Round</Label>
+          <Input id="round" value={round} onChange={(e) => setRound(e.target.value)} placeholder="Quarter-Final" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="mlabel">Match label</Label>
+          <Input id="mlabel" value={label} onChange={(e) => setLabel(e.target.value)} placeholder="QF 1" />
+        </div>
+      </div>
 
       <div className="space-y-1.5">
         <Label htmlFor="when">Starts at</Label>

@@ -7,9 +7,9 @@ import { guessCountry } from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const COLUMNS = ["player_a", "player_b", "tournament", "host_country", "scored_in", "starts_at"] as const;
+const COLUMNS = ["Date", "Session", "Scheduled Start Time", "Round", "Match Label", "Player 1", "Player 2"] as const;
 const SAMPLE =
-  "player_a,player_b,tournament,host_country,scored_in,starts_at\nLuke Littler,Luke Humphries,Premier League,GB,legs,2026-02-05 19:00\n";
+  "Date,Session,Scheduled Start Time,Round,Match Label,Player 1,Player 2\n2026-11-20,Evening,19:30,Quarter-Final,QF 1,Luke Littler,Michael Smith\n";
 
 type Status = { ok: boolean; messages: string[] } | null;
 
@@ -17,9 +17,10 @@ type Status = { ok: boolean; messages: string[] } | null;
 const HEADER_MAP: Record<string, string> = {
   "player 1": "player_a", player_1: "player_a", "player a": "player_a", player_a: "player_a", player1: "player_a",
   "player 2": "player_b", player_2: "player_b", "player b": "player_b", player_b: "player_b", player2: "player_b",
-  "scheduled start time": "starts_at", "start time": "starts_at", starts_at: "starts_at", datetime: "starts_at",
+  "scheduled start time": "time", "start time": "time", starts_at: "starts_at", datetime: "starts_at",
   date: "date", time: "time",
-  tournament: "tournament", round: "tournament", competition: "tournament",
+  tournament: "tournament", competition: "tournament", round: "round",
+  session: "session", "match label": "match_label", match_label: "match_label", label: "match_label", match: "match_label",
   host_country: "host_country", "host country": "host_country", country: "host_country",
   scored_in: "scored_in", "scored in": "scored_in", format: "scored_in",
 };
@@ -37,7 +38,8 @@ function toCountry(v: string | undefined) {
   return COUNTRY_NAMES[s.toLowerCase()] ?? guessCountry(s) ?? "GB";
 }
 
-type Row = Partial<Record<"player_a"|"player_b"|"starts_at"|"date"|"time"|"tournament"|"host_country"|"scored_in", string>>;
+type Row = Partial<Record<"player_a"|"player_b"|"starts_at"|"date"|"time"|"tournament"|"host_country"|"scored_in"|"session"|"round"|"match_label", string>>;
+export type CsvDefaults = { tournament?: string; format?: "legs" | "sets"; country?: string };
 
 function toDate(row: Row) {
   let raw = (row.starts_at ?? "").trim();
@@ -53,7 +55,7 @@ function toDate(row: Row) {
   return isNaN(when.getTime()) ? null : when;
 }
 
-export function parseFixtureCsv(text: string) {
+export function parseFixtureCsv(text: string, defaults: CsvDefaults = {}) {
   const res = Papa.parse<Row>(text, {
     header: true,
     skipEmptyLines: "greedy",
@@ -67,6 +69,9 @@ export function parseFixtureCsv(text: string) {
     player_a: string;
     player_b: string;
     tournament: string | null;
+    session: string | null;
+    round: string | null;
+    match_label: string | null;
     country: string;
     format: string;
     starts_at: string;
@@ -82,13 +87,16 @@ export function parseFixtureCsv(text: string) {
       return;
     }
     const fmtRaw = (r.scored_in ?? "").trim().toLowerCase();
-    const tournament = r.tournament?.trim() || null;
+    const tournament = r.tournament?.trim() || defaults.tournament?.trim() || null;
     rows.push({
       player_a: a,
       player_b: b,
       tournament,
-      country: toCountry(r.host_country),
-      format: fmtRaw.startsWith("leg") ? "legs" : "sets", // default: Sets
+      session: r.session?.trim() || null,
+      round: r.round?.trim() || null,
+      match_label: r.match_label?.trim() || null,
+      country: r.host_country ? toCountry(r.host_country) : defaults.country || (tournament && guessCountry(tournament)) || "GB",
+      format: fmtRaw ? (fmtRaw.startsWith("leg") ? "legs" : "sets") : defaults.format ?? "sets",
       starts_at: when.toISOString(),
     });
   });
@@ -102,12 +110,14 @@ export function CsvBulkUpload() {
   const [drag, setDrag] = useState(false);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<Status>(null);
+  const [tournament, setTournament] = useState("");
+  const [format, setFormat] = useState<"legs" | "sets">("sets");
 
   async function handleFile(file: File) {
     setBusy(true);
     setStatus(null);
     try {
-      const { rows, errors } = parseFixtureCsv(await file.text());
+      const { rows, errors } = parseFixtureCsv(await file.text(), { tournament, format });
       if (!rows.length) {
         setStatus({ ok: false, messages: errors.slice(0, 8) });
         return;
@@ -134,6 +144,27 @@ export function CsvBulkUpload() {
   return (
     <section className="panel mt-4 space-y-3 p-4">
       <h2 className="font-display text-xl font-bold uppercase">Bulk Upload via CSV</h2>
+      <div className="grid grid-cols-[1fr_auto] gap-2">
+        <input
+          value={tournament}
+          onChange={(e) => setTournament(e.target.value)}
+          placeholder="Tournament name (e.g. World Series Finals)"
+          aria-label="Tournament name for this upload"
+          className="h-11 rounded-md border border-input bg-background px-3 text-sm"
+        />
+        <div className="flex overflow-hidden rounded-md border border-input">
+          {(["legs", "sets"] as const).map((f) => (
+            <button
+              key={f}
+              type="button"
+              onClick={() => setFormat(f)}
+              className={cn("px-3 text-xs font-bold uppercase", format === f ? "bg-primary text-primary-foreground" : "text-muted-foreground")}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
       <button
         type="button"
         onClick={() => inputRef.current?.click()}
