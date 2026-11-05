@@ -43,6 +43,13 @@
       "when": 1793865726179,
       "tag": "0005_create_pdc_players",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793866320073,
+      "tag": "0006_chat_reactions",
+      "breakpoints": true
     }
   ]
 }
