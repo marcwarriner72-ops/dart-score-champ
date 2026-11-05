@@ -1,3 +1,4 @@
+import { usePdcPlayers } from "@/lib/pdc-players";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -435,14 +436,15 @@ function NewMatchForm() {
   return (
     <section className="panel space-y-3 p-4">
       <h2 className="font-display text-xl font-bold uppercase">Add a match</h2>
+      <PdcPlayerOptions />
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-1.5">
           <Label htmlFor="pa">Player 1</Label>
-          <Input id="pa" value={playerA} onChange={(e) => setPlayerA(e.target.value)} />
+          <Input id="pa" list="pdc-player-list" value={playerA} onChange={(e) => setPlayerA(e.target.value)} />
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="pb">Player 2</Label>
-          <Input id="pb" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
+          <Input id="pb" list="pdc-player-list" value={playerB} onChange={(e) => setPlayerB(e.target.value)} />
         </div>
       </div>
       <TournamentPicker id="tour" value={tournament} onChange={pickTournament} />
@@ -689,6 +691,7 @@ function ResultForm({ match }: { match: Match }) {
               <Label htmlFor={`pa-${match.id}`}>Player A</Label>
               <Input
                 id={`pa-${match.id}`}
+                list="pdc-player-list"
                 value={playerA}
                 onChange={(e) => setPlayerA(e.target.value)}
               />
@@ -697,6 +700,7 @@ function ResultForm({ match }: { match: Match }) {
               <Label htmlFor={`pb-${match.id}`}>Player B</Label>
               <Input
                 id={`pb-${match.id}`}
+                list="pdc-player-list"
                 value={playerB}
                 onChange={(e) => setPlayerB(e.target.value)}
               />
@@ -1135,5 +1139,16 @@ function AdminPredictions({ match }: { match: Match }) {
         onConfirm={() => confirmRemove && remove.mutate(confirmRemove)}
       />
     </Collapsible>
+  );
+}
+
+function PdcPlayerOptions() {
+  const { data = [] } = usePdcPlayers();
+  return (
+    <datalist id="pdc-player-list">
+      {data.map((p) => (
+        <option key={p.player_id} value={p.name}>{p.nickname ?? ""}</option>
+      ))}
+    </datalist>
   );
 }
