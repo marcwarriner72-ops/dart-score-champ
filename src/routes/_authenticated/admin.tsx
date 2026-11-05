@@ -188,6 +188,9 @@ function AdminPage() {
   const { data: user } = useSession();
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin(user?.id);
   const { data: matches = [] } = useMatches();
+  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "finished">("all");
+  const [tourFilter, setTourFilter] = useState("all");
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!roleLoading && isAdmin === false) navigate({ to: "/dashboard", replace: true });
@@ -201,8 +204,19 @@ function AdminPage() {
     );
   }
 
-  const active = matches.filter((m) => m.status === "upcoming");
-  const finished = matches
+  const q = search.trim().toLowerCase();
+  const tournamentNames = Array.from(
+    new Set(matches.map((m) => m.tournament?.trim() || "Other fixtures")),
+  ).sort();
+  const visible = matches.filter((m) => {
+    if (tourFilter !== "all" && (m.tournament?.trim() || "Other fixtures") !== tourFilter) return false;
+    if (!q) return true;
+    return [m.player_a, m.player_b, m.round, m.match_label, m.session]
+      .filter(Boolean)
+      .some((s) => String(s).toLowerCase().includes(q));
+  });
+  const active = statusFilter === "finished" ? [] : visible.filter((m) => m.status === "upcoming");
+  const finished = (statusFilter === "upcoming" ? [] : visible)
     .filter((m) => m.status === "finished")
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
   const archiveGroups: { name: string; matches: Match[] }[] = [];
@@ -217,6 +231,34 @@ function AdminPage() {
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
       <CsvBulkUpload />
+
+      <section className="panel mt-6 space-y-2 p-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Filter fixtures</p>
+        <div className="grid grid-cols-2 gap-2">
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+            <SelectTrigger className="h-10 w-full" aria-label="Filter by status"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All fixtures</SelectItem>
+              <SelectItem value="upcoming">Active only</SelectItem>
+              <SelectItem value="finished">Completed only</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={tourFilter} onValueChange={setTourFilter}>
+            <SelectTrigger className="h-10 w-full" aria-label="Filter by tournament"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tournaments</SelectItem>
+              {tournamentNames.map((n) => (
+                <SelectItem key={n} value={n}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex gap-2">
+          <Input placeholder="Search player, round, label…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-10" />
+          <Button variant="secondary" className="h-10" onClick={() => { setStatusFilter("all"); setTourFilter("all"); setSearch(""); }}>Clear</Button>
+        </div>
+        <p className="text-xs text-muted-foreground">Showing {visible.length} of {matches.length} fixtures</p>
+      </section>
 
       <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
       <p className="text-xs text-muted-foreground">

@@ -287,11 +287,12 @@ function MatchCard({
               <span className="shrink-0 text-muted-foreground">
                 {p.predicted_winner === "a" ? match.player_a : match.player_b} · {p.score_a}–
                 {p.score_b}
+                {p.guess_180s != null ? ` · ${p.guess_180s}×180` : ""}
               </span>
               {finished && (
                 <span
                   className={`shrink-0 font-display text-lg font-bold ${
-                    pts === 3 ? "text-gold" : pts === 1 ? "text-primary" : "text-muted-foreground"
+                    pts >= 3 ? "text-gold" : pts >= 1 ? "text-primary" : "text-muted-foreground"
                   }`}
                 >
                   {pts}
