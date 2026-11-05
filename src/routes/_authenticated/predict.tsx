@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { throwDart } from "@/components/DartThrow";
 import { CalendarCheck, ChevronDown } from "lucide-react";
 import { CountryFlag } from "@/components/CountryFlag";
+import { PushOptIn } from "@/components/Push";
 import {
   formatDate,
   guessCountry,
@@ -93,7 +94,8 @@ function PredictPage() {
   }
 
   return (
-    <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact score">
+    <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact · 1 pt winner · +5 exact 180s">
+      <div className="mb-4"><PushOptIn /></div>
       {isLoading ? (
         <MatchListSkeleton />
       ) : open.length === 0 ? (

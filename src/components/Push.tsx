@@ -41,7 +41,7 @@ export function PushOptIn() {
   });
   return (
     <div className="flex items-center justify-between gap-3 border border-border bg-card p-3">
-      <div className="min-w-0"><p className="text-sm font-bold">Push notifications</p><p className="text-xs text-muted-foreground">Get instant alerts from the Admin Command Center on this device.</p></div>
+      <div className="min-w-0"><p className="text-sm font-bold">Nudge reminders</p><p className="text-xs text-muted-foreground">Get nudges from the admin when fixtures go live or the darts start soon.</p></div>
       <Button variant={enabled ? "default" : "outline"} aria-pressed={enabled} disabled={!user || toggle.isPending} onClick={() => toggle.mutate()} className="shrink-0 gap-2">
         {enabled ? <Bell /> : <BellOff />}{enabled ? "On" : "Off"}
       </Button>
