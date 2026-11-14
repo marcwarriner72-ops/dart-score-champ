@@ -954,7 +954,12 @@ function AdminPredictions({ match }: { match: Match }) {
     const existing = byUser.get(userId);
     return (
       drafts[userId] ?? {
-        winner: existing?.predicted_winner ?? "",
+        winner:
+          existing?.predicted_winner === match.player_a
+            ? "a"
+            : existing?.predicted_winner === match.player_b
+              ? "b"
+              : (existing?.predicted_winner ?? ""),
         a: existing ? String(existing.score_a) : "",
         b: existing ? String(existing.score_b) : "",
         g: existing?.guess_180s == null ? "" : String(existing.guess_180s),
@@ -968,7 +973,7 @@ function AdminPredictions({ match }: { match: Match }) {
   const save = useMutation({
     mutationFn: async (userId: string) => {
       const d = draftFor(userId);
-      if (!d.winner) throw new Error("Pick a winner");
+      if (d.winner !== "a" && d.winner !== "b") throw new Error("Pick a winner");
       if (d.a === "" || d.b === "") throw new Error("Enter both scores");
       const sa = Number(d.a);
       const sb = Number(d.b);
@@ -1062,11 +1067,8 @@ function AdminPredictions({ match }: { match: Match }) {
                     <SelectValue placeholder="Winner" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={match.player_a}>{match.player_a}</SelectItem>
-                    <SelectItem value={match.player_b}>{match.player_b}</SelectItem>
-                    {d.winner && d.winner !== match.player_a && d.winner !== match.player_b && (
-                      <SelectItem value={d.winner}>{d.winner} (old pick)</SelectItem>
-                    )}
+                    <SelectItem value="a">{match.player_a}</SelectItem>
+                    <SelectItem value="b">{match.player_b}</SelectItem>
                   </SelectContent>
                 </Select>
                 <div className="flex items-center gap-2">

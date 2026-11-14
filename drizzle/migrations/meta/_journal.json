@@ -57,6 +57,13 @@
       "when": 1794669104827,
       "tag": "0007_tighten_user_roles_read",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794670571222,
+      "tag": "0008_normalize_predicted_winner",
+      "breakpoints": true
     }
   ]
 }
