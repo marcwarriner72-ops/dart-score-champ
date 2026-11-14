@@ -262,8 +262,8 @@ function PredictionCard({
   const n180 = guess180s === "" ? null : Number(guess180s);
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/90 shadow-2xl backdrop-blur-md">
-      <div aria-hidden className="absolute inset-x-0 top-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent shadow-[0_0_12px_var(--primary)]" />
+    <div className={`relative overflow-hidden rounded-2xl border-2 bg-slate-950/90 shadow-2xl backdrop-blur-md ${existing ? "border-emerald-500/70 shadow-[0_0_24px_-6px_rgba(16,185,129,0.55)]" : "border-slate-800"}`}>
+      <div aria-hidden className={`absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent ${existing ? "via-emerald-400" : "via-primary"} to-transparent`} />
 
       {/* Header */}
       <div className="border-b border-slate-800 bg-slate-900/50 px-4 pb-3 pt-4">
@@ -289,7 +289,7 @@ function PredictionCard({
               </span>
             )}
             {existing && !isLive && (
-              <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold uppercase text-primary">Locked in</span>
+              <span className="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest text-slate-950">✓ Locked in</span>
             )}
           </div>
         </div>
@@ -306,6 +306,16 @@ function PredictionCard({
           ))}
         </dl>
       </div>
+
+      {existing && (
+        <div className="flex items-center gap-2 border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs">
+          <span className="font-black uppercase tracking-widest text-emerald-400">Your call</span>
+          <span className="truncate font-semibold tabular-nums">
+            {existing.predicted_winner === "a" ? match.player_a : match.player_b} {existing.score_a}–{existing.score_b}
+            {existing.guess_180s != null ? ` · ${existing.guess_180s} × 180s` : ""}
+          </span>
+        </div>
+      )}
 
       {/* Scoreboard */}
       <div className="p-4">
@@ -373,11 +383,11 @@ function PredictionCard({
         </div>
 
         <Button
-          className="mt-4 h-12 w-full font-bold uppercase tracking-wider transition-transform active:scale-[0.98]"
+          className={`mt-4 h-12 w-full font-bold uppercase tracking-wider transition-transform active:scale-[0.98] ${existing ? "bg-emerald-600 text-slate-950 hover:bg-emerald-500" : ""}`}
           onClick={openConfirm}
           disabled={save.isPending}
         >
-          {existing ? "Update prediction" : "Lock in prediction"}
+          {existing ? "✓ Saved — tap to update" : "Lock in prediction"}
         </Button>
       </div>
 

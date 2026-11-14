@@ -13,6 +13,7 @@ import {
 } from "@/lib/league";
 import { Button } from "@/components/ui/button";
 import { NextFixtureCountdown } from "@/components/NextFixtureCountdown";
+import { LiveMatchPredictions } from "@/components/LiveMatchPredictions";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -101,6 +102,10 @@ function Dashboard() {
 
       <div className="mt-4">
         <NextFixtureCountdown matches={matches} />
+      </div>
+
+      <div className="mt-4">
+        <LiveMatchPredictions />
       </div>
 
       <section className="panel mt-4 p-4">
