@@ -246,7 +246,7 @@
 .dart-runner { animation: dart-run 10s linear infinite; }
 @media (prefers-reduced-motion: reduce) { .dart-runner { animation: none; display: none; } }
 
-.news-scroll { width: max-content; min-width: 100%; white-space: nowrap; animation: news-ticker 35s linear infinite; }
+.news-scroll { width: max-content; min-width: 100%; white-space: nowrap; animation: news-ticker 58s linear infinite; }
 .news-track:hover .news-scroll { animation-play-state: paused; }
 @keyframes news-ticker { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
 @media (prefers-reduced-motion: reduce) {
