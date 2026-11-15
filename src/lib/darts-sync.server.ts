@@ -24,7 +24,8 @@ function parseDate(raw: string): { date: Date; allDay: boolean } {
   }
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/.exec(v);
   if (!m) return { date: new Date(NaN), allDay: false };
-  return { date: new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6])), allDay: false };
+  const n = m.slice(1).map(Number) as number[];
+  return { date: new Date(Date.UTC(n[0]!, n[1]! - 1, n[2]!, n[3]!, n[4]!, n[5]!)), allDay: false };
 }
 
 export function parseIcs(text: string): IcsEvent[] {
@@ -34,16 +35,16 @@ export function parseIcs(text: string): IcsEvent[] {
   for (const line of lines) {
     if (line === "BEGIN:VEVENT") cur = {};
     else if (line === "END:VEVENT" && cur) {
-      if (cur.UID && cur.DTSTART) {
-        const s = parseDate(cur.DTSTART);
-        const e = cur.DTEND ? parseDate(cur.DTEND).date : null;
+      if (cur["UID"] && cur["DTSTART"]) {
+        const s = parseDate(cur["DTSTART"]);
+        const e = cur["DTEND"] ? parseDate(cur["DTEND"]).date : null;
         if (!isNaN(s.date.getTime()))
           out.push({
-            uid: cur.UID,
-            summary: unescape(cur.SUMMARY ?? ""),
-            location: cur.LOCATION ? unescape(cur.LOCATION) : null,
-            description: cur.DESCRIPTION ? unescape(cur.DESCRIPTION) : null,
-            url: cur.URL ?? null,
+            uid: cur["UID"],
+            summary: unescape(cur["SUMMARY"] ?? ""),
+            location: cur["LOCATION"] ? unescape(cur["LOCATION"]) : null,
+            description: cur["DESCRIPTION"] ? unescape(cur["DESCRIPTION"]) : null,
+            url: cur["URL"] ?? null,
             start: s.date,
             end: e && !isNaN(e.getTime()) ? e : null,
             allDay: s.allDay,
@@ -52,7 +53,7 @@ export function parseIcs(text: string): IcsEvent[] {
       cur = null;
     } else if (cur) {
       const i = line.indexOf(":");
-      if (i > 0) cur[line.slice(0, i).split(";")[0]] = line.slice(i + 1);
+      if (i > 0) cur[line.slice(0, i).split(";")[0] ?? ""] = line.slice(i + 1);
     }
   }
   return out;
@@ -63,20 +64,20 @@ export function splitSummary(summary: string) {
   const noTv = summary.replace(/\s*\([^)]*\)\s*$/, "").trim();
   const [tournament, rest] = noTv.split(/:\s*/, 2);
   const round = rest ? rest.replace(/,\s*\d{1,2}(:\d{2})?\s*(am|pm)\s*$/i, "").trim() : null;
-  return { tournament: tournament.trim(), round: round || null };
+  return { tournament: (tournament ?? "").trim(), round: round || null };
 }
 
 const SETS_EVENTS = ["world darts championship", "world championship", "world grand prix"];
 export function formatFor(tournament: string, description: string | null): "legs" | "sets" {
   const m = /best of \d+ (legs|sets)/i.exec(description ?? "");
-  if (m) return m[1].toLowerCase() as "legs" | "sets";
+  if (m?.[1]) return m[1].toLowerCase() as "legs" | "sets";
   const t = tournament.toLowerCase();
   return SETS_EVENTS.some((s) => t.includes(s)) ? "sets" : "legs";
 }
 
 export function parseOrderOfPlay(description: string | null): [string, string][] {
   const m = /order of play:\s*(.+?)(?:\.\s+[A-Z]|\.?$)/i.exec(description ?? "");
-  if (!m) return [];
+  if (!m?.[1]) return [];
   return m[1]
     .split(";")
     .map((p) => p.trim().split(/\s+v\s+/))
