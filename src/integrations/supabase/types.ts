@@ -271,6 +271,7 @@ export type Database = {
           highest_checkout: number | null
           hometown: string | null
           id: string
+          is_active: boolean
           walk_on_song: string | null
         }
         Insert: {
@@ -282,6 +283,7 @@ export type Database = {
           highest_checkout?: number | null
           hometown?: string | null
           id: string
+          is_active?: boolean
           walk_on_song?: string | null
         }
         Update: {
@@ -293,6 +295,7 @@ export type Database = {
           highest_checkout?: number | null
           hometown?: string | null
           id?: string
+          is_active?: boolean
           walk_on_song?: string | null
         }
         Relationships: []
