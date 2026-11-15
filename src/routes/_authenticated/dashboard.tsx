@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { NextFixtureCountdown } from "@/components/NextFixtureCountdown";
 import { LiveMatchPredictions } from "@/components/LiveMatchPredictions";
+import { TodaySummary } from "@/components/TodaySummary";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -87,6 +88,10 @@ function Dashboard() {
           {hasActive && currentTournament ? currentTournament : "None running"}
         </h2>
       </section>
+
+      <div className="mt-4">
+        <TodaySummary matches={matches} predictions={predictions} />
+      </div>
 
       {champion && (
         <section className="panel mt-4 border-gold/60 p-4 text-center">
