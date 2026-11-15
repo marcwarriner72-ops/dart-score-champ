@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { CsvBulkUpload } from "@/components/CsvBulkUpload";
+import { ForceSync } from "@/components/ForceSync";
 import { CompetitionReset } from "@/components/CompetitionReset";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
@@ -232,6 +233,7 @@ function AdminPage() {
     <AppShell title="Admin" subtitle="Fixtures and results">
       <NewMatchForm />
       <CsvBulkUpload />
+      <ForceSync />
 
       <section className="panel mt-6 space-y-2 p-3">
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Filter fixtures</p>
