@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      calendar_events: {
+        Row: {
+          all_day: boolean
+          description: string | null
+          ends_at: string | null
+          location: string | null
+          starts_at: string
+          summary: string
+          tournament: string | null
+          uid: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          all_day?: boolean
+          description?: string | null
+          ends_at?: string | null
+          location?: string | null
+          starts_at: string
+          summary: string
+          tournament?: string | null
+          uid: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          all_day?: boolean
+          description?: string | null
+          ends_at?: string | null
+          location?: string | null
+          starts_at?: string
+          summary?: string
+          tournament?: string | null
+          uid?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       matches: {
         Row: {
           archived: boolean
