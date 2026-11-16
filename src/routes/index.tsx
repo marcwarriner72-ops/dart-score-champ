@@ -11,6 +11,8 @@ export const Route = createFileRoute("/")({
         content:
           "A private darts prediction league for you and your mates. Call the winner, nail the leg score, and top the live leaderboard.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { property: "og:title", content: "Darts Predictor League" },
       {
         property: "og:description",

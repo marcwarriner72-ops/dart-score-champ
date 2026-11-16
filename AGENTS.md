@@ -8,3 +8,5 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Home quick settings reuse the shared Nudge preference hook and existing device reminder/sound storage so Profile and Home change the same preferences.
