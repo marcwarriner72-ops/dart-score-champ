@@ -7,6 +7,7 @@ import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { CsvBulkUpload } from "@/components/CsvBulkUpload";
 import { ForceSync } from "@/components/ForceSync";
+import { ManagePlayers, ProxyPredictions } from "@/components/AdminPlayers";
 import { CompetitionReset } from "@/components/CompetitionReset";
 import { AppShell } from "@/components/AppShell";
 import { CountryFlag } from "@/components/CountryFlag";
@@ -190,7 +191,7 @@ function AdminPage() {
   const { data: user } = useSession();
   const { data: isAdmin, isLoading: roleLoading } = useIsAdmin(user?.id);
   const { data: matches = [] } = useMatches();
-  const [statusFilter, setStatusFilter] = useState<"all" | "upcoming" | "finished">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "needs" | "upcoming">("needs");
   const [tourFilter, setTourFilter] = useState("all");
   const [search, setSearch] = useState("");
 
@@ -213,12 +214,22 @@ function AdminPage() {
   const visible = matches.filter((m) => {
     if (tourFilter !== "all" && (m.tournament?.trim() || "Other fixtures") !== tourFilter) return false;
     if (!q) return true;
-    return [m.player_a, m.player_b, m.round, m.match_label, m.session]
+    return [m.player_a, m.player_b, m.tournament, m.round, m.match_label, m.session]
       .filter(Boolean)
       .some((s) => String(s).toLowerCase().includes(q));
   });
-  const active = statusFilter === "finished" ? [] : visible.filter((m) => m.status === "upcoming");
-  const finished = (statusFilter === "upcoming" ? [] : visible)
+  const now = Date.now();
+  const active = visible
+    .filter((m) => m.status === "upcoming")
+    .filter((m) =>
+      statusFilter === "needs"
+        ? new Date(m.starts_at).getTime() <= now
+        : statusFilter === "upcoming"
+          ? new Date(m.starts_at).getTime() > now
+          : true,
+    )
+    .sort((a, b) => a.starts_at.localeCompare(b.starts_at));
+  const finished = (statusFilter === "all" ? visible : [])
     .filter((m) => m.status === "finished")
     .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
   const archiveGroups: { name: string; matches: Match[] }[] = [];
@@ -231,21 +242,22 @@ function AdminPage() {
 
   return (
     <AppShell title="Admin" subtitle="Fixtures and results">
+      <ProxyPredictions />
       <NewMatchForm />
       <CsvBulkUpload />
       <ForceSync />
 
       <section className="panel mt-6 space-y-2 p-3">
         <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Filter fixtures</p>
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
-            <SelectTrigger className="h-10 w-full" aria-label="Filter by status"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All fixtures</SelectItem>
-              <SelectItem value="upcoming">Active only</SelectItem>
-              <SelectItem value="finished">Completed only</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-3 gap-1 rounded-lg bg-secondary/50 p-1" role="tablist">
+          {([["needs", "Needs Score"], ["upcoming", "Upcoming"], ["all", "All"]] as const).map(([v, l]) => (
+            <button key={v} role="tab" aria-selected={statusFilter === v} onClick={() => setStatusFilter(v)}
+              className={`rounded-md py-2 text-xs font-bold uppercase transition ${statusFilter === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>
+              {l}
+            </button>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 gap-2">
           <Select value={tourFilter} onValueChange={setTourFilter}>
             <SelectTrigger className="h-10 w-full" aria-label="Filter by tournament"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -257,13 +269,13 @@ function AdminPage() {
           </Select>
         </div>
         <div className="flex gap-2">
-          <Input placeholder="Search player, round, label…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-10" />
-          <Button variant="secondary" className="h-10" onClick={() => { setStatusFilter("all"); setTourFilter("all"); setSearch(""); }}>Clear</Button>
+          <Input placeholder="Search player or tournament…" value={search} onChange={(e) => setSearch(e.target.value)} className="h-10" />
+          <Button variant="secondary" className="h-10" onClick={() => { setStatusFilter("needs"); setTourFilter("all"); setSearch(""); }}>Clear</Button>
         </div>
         <p className="text-xs text-muted-foreground">Showing {visible.length} of {matches.length} fixtures</p>
       </section>
 
-      <h2 className="mt-6 font-display text-xl font-bold uppercase">Active fixtures</h2>
+      <h2 className="mt-6 font-display text-xl font-bold uppercase">{statusFilter === "needs" ? "Needs score" : statusFilter === "upcoming" ? "Upcoming" : "Active fixtures"}</h2>
       <p className="text-xs text-muted-foreground">
         Saving a result moves the fixture to the Results & Archive page.
       </p>
@@ -305,6 +317,7 @@ function AdminPage() {
 
       <CompetitionReset />
 
+      <ManagePlayers />
       <AdminManager currentUserId={user?.id} />
 
       <PushAdmin />
@@ -1039,7 +1052,7 @@ function AdminPredictions({ match }: { match: Match }) {
           Add or correct anyone's pick, even for a match that's already been played. Points update
           straight away.
         </p>
-        {profiles.map((p) => {
+        {profiles.filter((p) => p.is_active || byUser.has(p.id)).map((p) => {
           const d = draftFor(p.id);
           const existing = byUser.get(p.id);
           return (
