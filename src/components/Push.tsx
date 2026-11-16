@@ -19,30 +19,40 @@ function useOptIn() {
   const uid = user?.id;
   return useQuery({
     queryKey: ["push-opt-in", uid], enabled: !!uid,
-    queryFn: async () => (await supabase.from("push_opt_ins").select("enabled").eq("user_id", uid!).maybeSingle()).data?.enabled ?? false,
+    queryFn: async () => {
+      if (!uid) return false;
+      const { data, error } = await supabase.from("push_opt_ins").select("enabled").eq("user_id", uid).maybeSingle();
+      if (error) throw error;
+      return data?.enabled ?? false;
+    },
   });
 }
 
 /** Opt-in toggle shown in My Profile & Settings. */
-export function PushOptIn() {
+export function useNudgeSettings() {
   const qc = useQueryClient();
   const { data: user } = useSession();
-  const { data: enabled = false } = useOptIn();
+  const { data: enabled = false, isPending, isError } = useOptIn();
   const toggle = useMutation({
-    mutationFn: async () => {
-      const next = !enabled;
+    mutationFn: async (next: boolean) => {
+      if (!user) throw new Error("Please sign in to change Nudge reminders");
       if (next && typeof Notification !== "undefined" && Notification.permission === "default") await Notification.requestPermission();
-      const { error } = await supabase.from("push_opt_ins").upsert({ user_id: user!.id, enabled: next, updated_at: new Date().toISOString() });
+      const { error } = await supabase.from("push_opt_ins").upsert({ user_id: user.id, enabled: next, updated_at: new Date().toISOString() });
       if (error) throw error;
       return next;
     },
-    onSuccess: (next) => { toast.success(next ? "Match alerts switched on" : "Match alerts switched off"); qc.invalidateQueries({ queryKey: ["push-opt-in"] }); },
+    onSuccess: (next) => { qc.setQueryData(["push-opt-in", user?.id], next); toast.success(next ? "Nudge reminders on" : "Nudge reminders off"); qc.invalidateQueries({ queryKey: ["push-opt-in"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
+  return { enabled, disabled: !user || isPending || isError || toggle.isPending, setEnabled: (next: boolean) => toggle.mutate(next) };
+}
+
+export function PushOptIn() {
+  const { enabled, disabled, setEnabled } = useNudgeSettings();
   return (
     <div className="flex items-center justify-between gap-3 border border-border bg-card p-3">
       <div className="min-w-0"><p className="text-sm font-bold">Nudge reminders</p><p className="text-xs text-muted-foreground">Get nudges from the admin when fixtures go live or the darts start soon.</p></div>
-      <Button variant={enabled ? "default" : "outline"} aria-pressed={enabled} disabled={!user || toggle.isPending} onClick={() => toggle.mutate()} className="shrink-0 gap-2">
+      <Button variant={enabled ? "default" : "outline"} aria-pressed={enabled} disabled={disabled} onClick={() => setEnabled(!enabled)} className="shrink-0 gap-2">
         {enabled ? <Bell /> : <BellOff />}{enabled ? "On" : "Off"}
       </Button>
     </div>
