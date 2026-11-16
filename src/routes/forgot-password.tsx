@@ -14,6 +14,8 @@ export const Route = createFileRoute("/forgot-password")({
       { name: "description", content: "Reset your Darts Predictor League password." },
       { property: "og:title", content: "Forgot password — Darts Predictor League" },
       { property: "og:description", content: "Reset your Darts Predictor League password." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ForgotPasswordPage,
