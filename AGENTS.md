@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Home quick settings reuse the shared Nudge preference hook and existing device reminder/sound storage so Profile and Home change the same preferences.
+- The daily predictions panel uses existing Dashboard data and an accessible dialog; it never fetches or exposes other users' upcoming picks.
