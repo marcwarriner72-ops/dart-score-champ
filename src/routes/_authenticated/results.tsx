@@ -264,9 +264,16 @@ function MatchCard({
           </p>
           <p className="text-xs text-muted-foreground">{formatDate(match.starts_at)}</p>
         </div>
-        <span className="shrink-0 font-display text-2xl font-bold">
-          {finished ? `${match.score_a}–${match.score_b}` : "LIVE"}
-        </span>
+        <div className="shrink-0 text-right">
+          <span className="block font-display text-2xl font-bold tabular-nums">
+            {finished ? `${match.score_a}–${match.score_b}` : "LIVE"}
+          </span>
+          {finished && match.total_180s != null && (
+            <span className="block text-xs font-semibold tabular-nums text-accent">
+              {match.total_180s} × 180s
+            </span>
+          )}
+        </div>
       </div>
 
       <ul className="mt-3 space-y-1.5">
