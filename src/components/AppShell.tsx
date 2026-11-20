@@ -12,6 +12,7 @@ import { NewsTicker } from "@/components/News";
 import { usePushListener } from "@/components/Push";
 import { usePalette } from "@/lib/palette";
 import { QuickSettings } from "@/components/QuickSettings";
+import { HowToPlayGuide } from "@/components/HowToPlayGuide";
 
 type NavItem = { to: string; icon: typeof Target; label: string; short: string; badge?: number };
 type NavGroup = { label: string; icon: typeof Target; items: NavItem[] };
@@ -112,6 +113,7 @@ export function AppShell({
           {subtitle ? <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p> : null}
         </div>
         <div className="flex items-center gap-1">
+          <HowToPlayGuide />
           {pathname === "/dashboard" ? <QuickSettings /> : null}
           <Link to="/profile" aria-label="Your profile">
             <PlayerAvatar path={profile?.avatar_url} name={profile?.display_name} className="size-10" />
