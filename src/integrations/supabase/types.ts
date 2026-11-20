@@ -336,6 +336,36 @@ export type Database = {
         }
         Relationships: []
       }
+      results_sync_runs: {
+        Row: {
+          checked: number
+          graded: number
+          id: string
+          message: string | null
+          ran_at: string
+          rate_limit_remaining: number | null
+          raw_stats_sample: Json | null
+        }
+        Insert: {
+          checked?: number
+          graded?: number
+          id?: string
+          message?: string | null
+          ran_at?: string
+          rate_limit_remaining?: number | null
+          raw_stats_sample?: Json | null
+        }
+        Update: {
+          checked?: number
+          graded?: number
+          id?: string
+          message?: string | null
+          ran_at?: string
+          rate_limit_remaining?: number | null
+          raw_stats_sample?: Json | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

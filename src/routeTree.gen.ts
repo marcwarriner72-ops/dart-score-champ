@@ -27,6 +27,7 @@ import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedRulesRouteImport } from './routes/_authenticated/rules'
 import { Route as ApiPublicDailySyncRouteImport } from './routes/api/public/daily-sync'
 import { Route as ApiPublicSyncDartsFixturesRouteImport } from './routes/api/public/sync-darts-fixtures'
+import { Route as ApiPublicSyncDartsResultsRouteImport } from './routes/api/public/sync-darts-results'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -120,6 +121,12 @@ const ApiPublicSyncDartsFixturesRoute =
     path: '/api/public/sync-darts-fixtures',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSyncDartsResultsRoute =
+  ApiPublicSyncDartsResultsRouteImport.update({
+    id: '/api/public/sync-darts-results',
+    path: '/api/public/sync-darts-results',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/rules': typeof AuthenticatedRulesRoute
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
   '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
+  '/api/public/sync-darts-results': typeof ApiPublicSyncDartsResultsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -158,6 +166,7 @@ export interface FileRoutesByTo {
   '/rules': typeof AuthenticatedRulesRoute
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
   '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
+  '/api/public/sync-darts-results': typeof ApiPublicSyncDartsResultsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -179,6 +188,7 @@ export interface FileRoutesById {
   '/_authenticated/rules': typeof AuthenticatedRulesRoute
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
   '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
+  '/api/public/sync-darts-results': typeof ApiPublicSyncDartsResultsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/api/public/daily-sync'
     | '/api/public/sync-darts-fixtures'
+    | '/api/public/sync-darts-results'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/rules'
     | '/api/public/daily-sync'
     | '/api/public/sync-darts-fixtures'
+    | '/api/public/sync-darts-results'
   id:
     | '__root__'
     | '/'
@@ -239,6 +251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rules'
     | '/api/public/daily-sync'
     | '/api/public/sync-darts-fixtures'
+    | '/api/public/sync-darts-results'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +262,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicDailySyncRoute: typeof ApiPublicDailySyncRoute
   ApiPublicSyncDartsFixturesRoute: typeof ApiPublicSyncDartsFixturesRoute
+  ApiPublicSyncDartsResultsRoute: typeof ApiPublicSyncDartsResultsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -379,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncDartsFixturesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sync-darts-results': {
+      id: '/api/public/sync-darts-results'
+      path: '/api/public/sync-darts-results'
+      fullPath: '/api/public/sync-darts-results'
+      preLoaderRoute: typeof ApiPublicSyncDartsResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -421,6 +442,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicDailySyncRoute: ApiPublicDailySyncRoute,
   ApiPublicSyncDartsFixturesRoute: ApiPublicSyncDartsFixturesRoute,
+  ApiPublicSyncDartsResultsRoute: ApiPublicSyncDartsResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
