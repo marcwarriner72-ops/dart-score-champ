@@ -3,6 +3,14 @@ import { AppShell } from "@/components/AppShell";
 
 export const Route = createFileRoute("/_authenticated/rules")({
   component: RulesPage,
+  head: () => ({ meta: [
+    { title: "Official Rulebook | Darts Predictor League" },
+    { name: "description", content: "How to save darts predictions and earn winner, exact-score and 180s bonus points." },
+    { property: "og:title", content: "Official Rulebook | Darts Predictor League" },
+    { property: "og:description", content: "Prediction instructions and official scoring rules for Darts Predictor League." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
 });
 
 function RulesPage() {

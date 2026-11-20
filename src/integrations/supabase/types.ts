@@ -411,6 +411,7 @@ export type Database = {
         }
         Returns: number
       }
+      sync_darts_fixtures: { Args: { p_fixtures: Json }; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "user"

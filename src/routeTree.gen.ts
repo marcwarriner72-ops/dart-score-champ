@@ -26,6 +26,7 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedResultsRouteImport } from './routes/_authenticated/results'
 import { Route as AuthenticatedRulesRouteImport } from './routes/_authenticated/rules'
 import { Route as ApiPublicDailySyncRouteImport } from './routes/api/public/daily-sync'
+import { Route as ApiPublicSyncDartsFixturesRouteImport } from './routes/api/public/sync-darts-fixtures'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -113,6 +114,12 @@ const ApiPublicDailySyncRoute = ApiPublicDailySyncRouteImport.update({
   path: '/api/public/daily-sync',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicSyncDartsFixturesRoute =
+  ApiPublicSyncDartsFixturesRouteImport.update({
+    id: '/api/public/sync-darts-fixtures',
+    path: '/api/public/sync-darts-fixtures',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/results': typeof AuthenticatedResultsRoute
   '/rules': typeof AuthenticatedRulesRoute
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
+  '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -149,6 +157,7 @@ export interface FileRoutesByTo {
   '/results': typeof AuthenticatedResultsRoute
   '/rules': typeof AuthenticatedRulesRoute
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
+  '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -169,6 +178,7 @@ export interface FileRoutesById {
   '/_authenticated/results': typeof AuthenticatedResultsRoute
   '/_authenticated/rules': typeof AuthenticatedRulesRoute
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
+  '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/rules'
     | '/api/public/daily-sync'
+    | '/api/public/sync-darts-fixtures'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/results'
     | '/rules'
     | '/api/public/daily-sync'
+    | '/api/public/sync-darts-fixtures'
   id:
     | '__root__'
     | '/'
@@ -226,6 +238,7 @@ export interface FileRouteTypes {
     | '/_authenticated/results'
     | '/_authenticated/rules'
     | '/api/public/daily-sync'
+    | '/api/public/sync-darts-fixtures'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -235,6 +248,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicDailySyncRoute: typeof ApiPublicDailySyncRoute
+  ApiPublicSyncDartsFixturesRoute: typeof ApiPublicSyncDartsFixturesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -358,6 +372,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicDailySyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sync-darts-fixtures': {
+      id: '/api/public/sync-darts-fixtures'
+      path: '/api/public/sync-darts-fixtures'
+      fullPath: '/api/public/sync-darts-fixtures'
+      preLoaderRoute: typeof ApiPublicSyncDartsFixturesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -399,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicDailySyncRoute: ApiPublicDailySyncRoute,
+  ApiPublicSyncDartsFixturesRoute: ApiPublicSyncDartsFixturesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

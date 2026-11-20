@@ -11,3 +11,4 @@
 
 - Home quick settings reuse the shared Nudge preference hook and existing device reminder/sound storage so Profile and Home change the same preferences.
 - The daily predictions panel uses existing Dashboard data and an accessible dialog; it never fetches or exposes other users' upcoming picks.
+- Fixture-provider calls run in a server-only helper shared by the authenticated admin action and managed cron route; the service-only transactional RPC serializes writes and preserves existing player order, predictions, results and archives.

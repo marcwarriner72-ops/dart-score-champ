@@ -7,6 +7,7 @@ import { ChevronDown, Pencil, RotateCcw, Trash2, Unlock, Users } from "lucide-re
 import { supabase } from "@/integrations/supabase/client";
 import { CsvBulkUpload } from "@/components/CsvBulkUpload";
 import { ForceSync } from "@/components/ForceSync";
+import { SyncFixtures } from "@/components/SyncFixtures";
 import { ManagePlayers, ProxyPredictions } from "@/components/AdminPlayers";
 import { CompetitionReset } from "@/components/CompetitionReset";
 import { AppShell } from "@/components/AppShell";
@@ -245,6 +246,7 @@ function AdminPage() {
       <ProxyPredictions />
       <NewMatchForm />
       <CsvBulkUpload />
+      <SyncFixtures />
       <ForceSync />
 
       <section className="panel mt-6 space-y-2 p-3">
