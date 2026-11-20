@@ -183,8 +183,11 @@ const chapters: Chapter[] = [
   },
 ];
 
-export function HowToPlayGuide({ compact = false }: { compact?: boolean } = {}) {
-  const [open, setOpen] = useState(false);
+export function HowToPlayGuide({ compact = false, open: openProp, onOpenChange }: { compact?: boolean; open?: boolean; onOpenChange?: (o: boolean) => void } = {}) {
+  const [openState, setOpenState] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : openState;
+  const setOpen = (o: boolean) => { if (!controlled) setOpenState(o); onOpenChange?.(o); };
   const [ch, setCh] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -215,6 +218,7 @@ export function HowToPlayGuide({ compact = false }: { compact?: boolean } = {}) 
     return () => cancelAnimationFrame(raf);
   }, [open, playing, speed, ch]);
 
+  useEffect(() => { if (controlled && openProp) { setCh(0); setElapsed(0); setPlaying(true); } }, [controlled, openProp]);
   const go = (i: number) => { setCh(Math.max(0, Math.min(chapters.length - 1, i))); setElapsed(0); setPlaying(true); };
   const t = elapsed / SCENE_MS;
   const total = (ch + t) / chapters.length;
@@ -224,7 +228,7 @@ export function HowToPlayGuide({ compact = false }: { compact?: boolean } = {}) 
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) go(0); }}>
-      <DialogTrigger asChild>
+      {!controlled && <DialogTrigger asChild>
         {compact ? (
           <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-bold uppercase">
             <MonitorPlay className="size-4 text-accent" /> How to Play &amp; Video Guide
@@ -234,7 +238,7 @@ export function HowToPlayGuide({ compact = false }: { compact?: boolean } = {}) 
             <MonitorPlay className="size-5" />
           </Button>
         )}
-      </DialogTrigger>
+      </DialogTrigger>}
       <DialogContent className="max-w-lg gap-0 overflow-hidden border-2 p-0">
         <div className="px-4 pt-4">
           <DialogTitle className="font-display text-2xl">How to Play · Video Guide</DialogTitle>

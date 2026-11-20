@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv, Swords, Users, CalendarDays, UserRound } from "lucide-react";
+import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, Settings, Wrench, ChevronUp, Tv, Swords, Users, CalendarDays, UserRound, MonitorPlay } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -113,7 +113,6 @@ export function AppShell({
           {subtitle ? <p className="mt-1 truncate text-xs text-muted-foreground">{subtitle}</p> : null}
         </div>
         <div className="flex items-center gap-1">
-          <HowToPlayGuide />
           {pathname === "/dashboard" ? <QuickSettings /> : null}
           <Link to="/profile" aria-label="Your profile">
             <PlayerAvatar path={profile?.avatar_url} name={profile?.display_name} className="size-10" />
@@ -169,6 +168,7 @@ function Taskbar({
   toPredict: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [guide, setGuide] = useState(false);
   const [now, setNow] = useState("");
 
   useEffect(() => {
@@ -224,12 +224,23 @@ function Taskbar({
                       </Link>
                     );
                   })}
+                  {group.label === "Standings" ? (
+                    <button
+                      type="button"
+                      onClick={() => { setOpen(false); setGuide(true); }}
+                      className="flex h-11 w-full items-center gap-3 pl-6 pr-4 text-left text-sm hover:bg-muted"
+                    >
+                      <MonitorPlay className="size-4 text-primary" />
+                      <span className="flex-1">How to…</span>
+                    </button>
+                  ) : null}
                 </div>
               ))}
             </div>
           </nav>
         </PopoverContent>
       </Popover>
+      <HowToPlayGuide open={guide} onOpenChange={setGuide} />
       <div className="flex min-w-0 items-center gap-2 border-l border-border pl-2">
         <ActiveIcon className="size-4 shrink-0 text-primary" />
         <span className="truncate text-xs font-medium">

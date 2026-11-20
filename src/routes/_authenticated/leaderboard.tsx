@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { Archive, Trophy } from "lucide-react";
 import { playCheer } from "@/lib/sound";
 import { AppShell } from "@/components/AppShell";
-import { HowToPlayGuide } from "@/components/HowToPlayGuide";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { EmptyState } from "@/components/EmptyState";
 import { RowListSkeleton } from "@/components/Skeletons";
@@ -102,11 +101,7 @@ function LeaderboardPage() {
         </button>
       )}
 
-      <div className="mt-4 flex justify-end">
-        <HowToPlayGuide compact />
-      </div>
-
-      <div className="mt-3">
+      <div className="mt-4">
         {isLoading ? (
           <RowListSkeleton />
         ) : rows.length === 0 ? (
