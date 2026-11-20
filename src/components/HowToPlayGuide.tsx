@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Minus, Upload, MonitorPlay } from "lucide-react";
+import { Play, Pause, RotateCcw, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, Minus, MonitorPlay, Lock, Share, SquarePlus } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -22,119 +22,168 @@ const Ring = ({ on, children, className = "" }: { on: boolean; children: ReactNo
   <div className={`transition-all duration-500 ${on ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""} ${className}`}>{children}</div>
 );
 
+const Toast = ({ on }: { on: boolean }) => (
+  <div className={`absolute left-1/2 top-3 z-10 -translate-x-1/2 whitespace-nowrap rounded-md bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow transition-all duration-500 ${on ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"}`}>✓ Predictions saved</div>
+);
+
 const chapters: Chapter[] = [
   {
-    title: "Joining & Switching Leagues",
+    title: "Switching Leagues & Tabs",
     short: "Leagues",
-    captions: ["Open the league selector at the top of Home.", "Pick the competition you want to follow.", "New friends? Tap Create / Join League."],
+    captions: ["Tap the league dropdown to switch competitions.", "Pick the league you want to follow.", "Hop between Predict, Standings and Results tabs."],
     Stage: ({ t }) => {
       const s = t < 0.33 ? 0 : t < 0.66 ? 1 : 2;
+      const tab = t < 0.78 ? 0 : t < 0.9 ? 1 : 2;
       return (
         <div className="relative h-full space-y-3 p-4">
           <Ring on={s < 2}><div className="flex items-center justify-between border-2 border-border bg-secondary px-3 py-2 text-sm font-bold">🇬🇧 Grand Slam of Darts <span>▾</span></div></Ring>
-          <div className={`space-y-1 overflow-hidden border-2 border-border bg-card text-sm transition-all duration-500 ${s === 1 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}`}>
+          <div className={`overflow-hidden border-2 border-border bg-card text-sm transition-all duration-500 ${s === 1 ? "max-h-40 opacity-100" : "max-h-0 opacity-0"}`}>
             {["🇬🇧 Grand Slam of Darts", "🇬🇧 Players Championship Finals", "🇬🇧 World Championship"].map((n, i) => <div key={n} className={`px-3 py-1.5 ${i === 1 ? "bg-primary text-primary-foreground" : ""}`}>{n}</div>)}
           </div>
-          <Ring on={s === 2}><div className="bg-primary py-2 text-center text-sm font-bold uppercase text-primary-foreground">+ Create / Join League</div></Ring>
-          <Cursor x={s === 2 ? 50 : s === 1 ? 40 : 85} y={s === 2 ? (s === 2 ? 72 : 30) : s === 1 ? 42 : 12} click={t > 0.25 && t < 0.33 || t > 0.85} />
+          <Ring on={s === 2} className="absolute inset-x-4 bottom-12">
+            <div className="grid grid-cols-3 border-2 border-border text-center text-xs font-bold uppercase">
+              {["Predict", "Standings", "Results"].map((n, i) => <div key={n} className={`py-2 transition-colors ${tab === i ? "bg-primary text-primary-foreground" : "bg-card"}`}>{n}</div>)}
+            </div>
+          </Ring>
+          <Cursor x={s === 2 ? 18 + tab * 32 : s === 1 ? 40 : 85} y={s === 2 ? 80 : s === 1 ? 40 : 12} click={(t > 0.25 && t < 0.33) || t > 0.75} />
         </div>
       );
     },
   },
   {
-    title: "Submitting Match Predictions",
+    title: "Predicting Scores & 180s",
     short: "Predict",
-    captions: ["Grand Slam fixtures — Best of 31 legs.", "Type your leg scoreline, e.g. 16–12.", "Hit Save Predictions before the match locks."],
+    captions: ["Open an upcoming Grand Slam fixture — Best of 31 legs.", "Enter your leg score (16–13) and total 180s (14).", "Tap Save Predictions — a green toast confirms it."],
     Stage: ({ t }) => {
-      const a = t < 0.33 ? "" : t < 0.5 ? "1" : "16";
-      const b = t < 0.5 ? "" : t < 0.6 ? "1" : "12";
-      const saved = t > 0.85;
+      const s = t < 0.33 ? 0 : t < 0.66 ? 1 : 2;
       return (
         <div className="relative h-full p-4">
-          <div className={`border-2 bg-card p-3 transition-colors ${saved ? "border-primary" : "border-border"}`}>
-            <div className="flex justify-between text-[10px] font-bold uppercase text-muted-foreground"><span>Grand Slam · Quarter-final</span><span>Best of 31 legs</span></div>
+          <Toast on={t > 0.75} />
+          <div className="border-2 border-border bg-card p-3">
+            <p className="text-[10px] font-bold uppercase text-accent">Grand Slam of Darts · Best of 31 legs</p>
             <div className="mt-2 grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center text-sm font-bold">
               <span>Luke Littler</span><span className="text-muted-foreground">v</span><span>Luke Humphries</span>
-              <Ring on={t > 0.3 && t < 0.6}><div className="h-9 border-2 border-border bg-background text-xl leading-8 tabular-nums">{a}</div></Ring>
-              <span>–</span>
-              <Ring on={t > 0.3 && t < 0.6}><div className="h-9 border-2 border-border bg-background text-xl leading-8 tabular-nums">{b}</div></Ring>
             </div>
-            <div className="mt-2 text-center text-[10px] text-muted-foreground">🔒 Locks at 19:00</div>
+            <Ring on={s === 1} className="mt-3">
+              <div className="grid grid-cols-2 gap-2">
+                {[s >= 1 ? "16" : "–", s >= 1 ? "13" : "–"].map((v, i) => <div key={i} className="border-2 border-border bg-secondary py-2 text-center font-display text-2xl tabular-nums">{v}</div>)}
+              </div>
+              <div className="mt-2 flex items-center justify-between border-2 border-border bg-secondary px-3 py-1.5 text-sm"><span>Total 180s</span><span className="font-display text-xl tabular-nums">{s >= 1 ? 14 : "–"}</span></div>
+            </Ring>
+            <Ring on={s === 2} className="mt-3"><div className="bg-primary py-2 text-center text-sm font-bold uppercase text-primary-foreground">Save Predictions</div></Ring>
           </div>
-          <Ring on={t > 0.65} className="mt-3"><div className="bg-primary py-2 text-center text-sm font-bold uppercase text-primary-foreground">{saved ? "✓ Locked in" : "Save Predictions"}</div></Ring>
-          <Cursor x={t < 0.3 ? 80 : t < 0.65 ? 30 : 50} y={t < 0.3 ? 10 : t < 0.65 ? 45 : 82} click={t > 0.8 && t < 0.9} />
+          <Cursor x={s === 2 ? 50 : s === 1 ? 30 : 50} y={s === 2 ? 78 : s === 1 ? 42 : 25} click={t > 0.66 && t < 0.78} />
         </div>
       );
     },
   },
   {
-    title: "Scoring & Tiebreakers",
-    short: "Scoring",
-    captions: ["Exact winner AND score = 3 points.", "Correct winner only = 1 point.", "Nail the exact 180s count for +5 bonus."],
+    title: "Lock Deadlines & Editing",
+    short: "Locks",
+    captions: ["Change your scores and 180s as often as you like…", "…right up until the countdown reaches 00:00.", "At start time a padlock locks the fixture automatically."],
     Stage: ({ t }) => {
-      const rows = [
-        { l: "Exact score", d: "You 16–12 · Result 16–12", p: "+3" },
-        { l: "Correct winner", d: "You 16–10 · Result 16–12", p: "+1" },
-        { l: "Exact 180s", d: "You 9 · Result 9", p: "+5" },
-      ];
+      const secs = Math.max(0, Math.round(10 - t * 15));
+      const locked = secs === 0;
       return (
-        <div className="space-y-2 p-4">
-          {rows.map((r, i) => (
-            <div key={r.l} className={`flex items-center justify-between border-2 bg-card p-3 transition-all duration-700 ${t > i * 0.3 ? "translate-x-0 border-primary opacity-100" : "-translate-x-6 border-border opacity-0"}`}>
-              <div><div className="text-sm font-bold">{r.l}</div><div className="text-xs text-muted-foreground tabular-nums">{r.d}</div></div>
-              <div className="font-display text-3xl text-primary">{r.p}</div>
+        <div className="relative h-full p-4">
+          <div className={`border-2 bg-card p-3 transition-colors ${locked ? "border-muted-foreground/40" : "border-border"}`}>
+            <div className="flex items-center justify-between text-xs font-bold uppercase">
+              <span>Starts in</span>
+              <Ring on={t > 0.33 && t < 0.7}><span className={`font-display text-2xl tabular-nums ${locked ? "text-destructive" : "text-accent"}`}>00:{String(secs).padStart(2, "0")}</span></Ring>
             </div>
-          ))}
-          <div className="text-center text-xs text-muted-foreground">Wrong winner = 0 · Ties split by most exact scores</div>
-        </div>
-      );
-    },
-  },
-  {
-    title: "Live Leaderboard & Standings",
-    short: "Table",
-    captions: ["The table updates as results come in.", "Arrows show who's climbing or falling.", "Top of the oche wins the tournament!"],
-    Stage: ({ t }) => {
-      const after = t > 0.4;
-      const list = after
-        ? [{ n: "Board Bomber Bradwell", p: 72, m: 1 }, { n: "Marc Allah Warriner", p: 69, m: -1 }, { n: "Powelly", p: 40, m: 0 }]
-        : [{ n: "Marc Allah Warriner", p: 65, m: 0 }, { n: "Board Bomber Bradwell", p: 69, m: 0 }, { n: "Powelly", p: 40, m: 0 }];
-      return (
-        <div className="space-y-2 p-4">
-          {list.map((r, i) => (
-            <div key={r.n} className="flex items-center gap-3 border-2 border-border bg-card px-3 py-2 transition-all duration-700">
-              <span className="font-display text-2xl tabular-nums">{i + 1}</span>
-              {r.m > 0 ? <ArrowUp className="size-4 text-primary" /> : r.m < 0 ? <ArrowDown className="size-4 text-destructive" /> : <Minus className="size-4 text-muted-foreground" />}
-              <span className="flex-1 truncate text-sm font-bold">{r.n}</span>
-              <span className="font-display text-2xl tabular-nums">{r.p}</span>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {[t < 0.2 ? "16" : "15", t < 0.2 ? "13" : "16"].map((v, i) => <div key={i} className={`border-2 border-border py-2 text-center font-display text-2xl tabular-nums ${locked ? "opacity-50" : "bg-secondary"}`}>{v}</div>)}
             </div>
-          ))}
-        </div>
-      );
-    },
-  },
-  {
-    title: "Admin Fixture Upload (Optional)",
-    short: "Admin",
-    captions: ["Admins: open Admin → Bulk Upload via CSV.", "Use columns Date, Session, Scheduled Start Time, Round, Match Label, Player 1, Player 2.", "Drop the file — fixtures appear instantly."],
-    Stage: ({ t }) => (
-      <div className="relative h-full space-y-2 p-4">
-        <div className="overflow-hidden border-2 border-border bg-card text-[9px]">
-          <div className="grid grid-cols-7 bg-secondary font-bold">{["Date", "Session", "Start", "Round", "Label", "Player 1", "Player 2"].map((h) => <span key={h} className="truncate px-1 py-1">{h}</span>)}</div>
-          <div className="grid grid-cols-7 text-muted-foreground">{["21/11", "Evening", "19:00", "QF", "Match 1", "Littler", "Humphries"].map((h, i) => <span key={i} className="truncate px-1 py-1">{h}</span>)}</div>
-        </div>
-        <Ring on={t > 0.4}>
-          <div className={`flex flex-col items-center gap-1 border-2 border-dashed p-4 text-xs font-bold transition-colors ${t > 0.75 ? "border-primary text-primary" : "border-border"}`}>
-            <Upload className="size-5" />{t > 0.75 ? "✓ 8 fixtures imported" : "Drag & drop CSV here"}
+            <div className={`mt-3 flex items-center justify-center gap-2 py-2 text-sm font-bold uppercase transition-all duration-500 ${locked ? "scale-100 bg-secondary opacity-100" : "scale-75 opacity-0"}`}>
+              <Lock className="size-4" /> Locked
+            </div>
           </div>
-        </Ring>
-        <Cursor x={t < 0.4 ? 20 : 50} y={t < 0.4 ? 15 : 60} click={t > 0.65 && t < 0.78} />
-      </div>
-    ),
+          <Cursor x={locked ? 50 : 30} y={locked ? 75 : 45} click={t > 0.1 && t < 0.2} />
+        </div>
+      );
+    },
+  },
+  {
+    title: "Viewing Rivals' Picks",
+    short: "Rivals",
+    captions: ["Once a match is locked or live, tap it.", "Every league member's leg score and 180s appear.", "Compare picks while you watch the broadcast."],
+    Stage: ({ t }) => {
+      const open = t > 0.3;
+      const picks = [["Marc", "16–13", 14], ["Neil", "16–12", 11], ["Kev", "14–16", 9]] as const;
+      return (
+        <div className="relative h-full space-y-2 p-4">
+          <Ring on={!open}><div className="flex items-center justify-between border-2 border-border bg-card px-3 py-2 text-sm font-bold"><span>Littler v Humphries</span><span className="rounded bg-destructive px-1.5 text-[10px] text-destructive-foreground">LIVE</span></div></Ring>
+          <div className={`space-y-1 overflow-hidden transition-all duration-700 ${open ? "max-h-60 opacity-100" : "max-h-0 opacity-0"}`}>
+            {picks.map(([n, sc, x], i) => (
+              <Ring key={n} on={t > 0.66 && i === 1}>
+                <div className="grid grid-cols-[1fr_auto_auto] gap-3 border-2 border-border bg-secondary px-3 py-1.5 text-sm"><span className="font-semibold">{n}</span><span className="tabular-nums">{sc}</span><span className="tabular-nums text-accent">{x}×180</span></div>
+              </Ring>
+            ))}
+          </div>
+          <Cursor x={open ? 60 : 40} y={open ? 50 : 12} click={t > 0.2 && t < 0.3} />
+        </div>
+      );
+    },
+  },
+  {
+    title: "Points, 180s Bonuses & Tiebreakers",
+    short: "Points",
+    captions: ["Correct winner = 1 pt. Exact leg score = 3 pts.", "Exact number of 180s = +5 bonus points.", "Ties: most exact scores, then closest 180s."],
+    Stage: ({ t }) => {
+      const s = t < 0.33 ? 0 : t < 0.66 ? 1 : 2;
+      const rows = [["Correct winner", "+1"], ["Exact leg score", "+3"], ["Exact 180s", "+5"]];
+      return (
+        <div className="relative h-full space-y-2 p-4">
+          {rows.map(([l, p], i) => (
+            <Ring key={l} on={(s === 0 && i < 2) || (s === 1 && i === 2)}>
+              <div className={`flex items-center justify-between border-2 border-border bg-card px-3 py-2 transition-opacity ${s === 2 ? "opacity-50" : ""}`}><span className="text-sm font-semibold">{l}</span><span className="font-display text-2xl text-accent">{p}</span></div>
+            </Ring>
+          ))}
+          <Ring on={s === 2}>
+            <div className={`border-2 border-gold/60 bg-secondary px-3 py-2 text-xs transition-opacity ${s === 2 ? "opacity-100" : "opacity-40"}`}>
+              <p className="font-bold uppercase text-gold">Tiebreakers</p>
+              <p>1. Most exact scores · 2. Closest 180s</p>
+            </div>
+          </Ring>
+        </div>
+      );
+    },
+  },
+  {
+    title: "Live Standings & Quick Mobile Access",
+    short: "Standings",
+    captions: ["Results land and the table updates live.", "Arrows show who's climbing and who's dropping.", "Tip: Share / Menu → Add to Home Screen for instant access."],
+    Stage: ({ t }) => {
+      const swapped = t > 0.3;
+      const base = [{ n: "Neil", p: 69 }, { n: "Marc", p: swapped ? 73 : 65 }, { n: "Kev", p: 40 }];
+      const rows = swapped ? [base[1]!, base[0]!, base[2]!] : base;
+      const tip = t > 0.66;
+      return (
+        <div className="relative h-full p-4">
+          <ol className={`space-y-2 transition-opacity duration-500 ${tip ? "opacity-20" : ""}`}>
+            {rows.map((r, i) => {
+              const mv = !swapped ? 0 : r.n === "Marc" ? 1 : r.n === "Neil" ? -1 : 0;
+              return (
+                <li key={r.n} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 border-2 border-border bg-card px-3 py-2 text-sm transition-all duration-700">
+                  <span className="font-display text-lg">{i + 1}</span><span className="font-semibold">{r.n}</span>
+                  {mv > 0 ? <ArrowUp className="size-4 text-primary" /> : mv < 0 ? <ArrowDown className="size-4 text-destructive" /> : <Minus className="size-4 text-muted-foreground" />}
+                  <span className="font-display text-xl tabular-nums">{r.p}</span>
+                </li>
+              );
+            })}
+          </ol>
+          <div className={`absolute inset-x-6 bottom-12 border-2 border-accent bg-card p-3 text-sm transition-all duration-500 ${tip ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"}`}>
+            <p className="flex items-center gap-2 font-bold"><Share className="size-4" /> Share / ⋮ Menu</p>
+            <Ring on={tip} className="mt-2"><p className="flex items-center gap-2 bg-secondary px-2 py-1.5 font-semibold"><SquarePlus className="size-4" /> Add to Home Screen</p></Ring>
+          </div>
+          <Cursor x={tip ? 45 : 85} y={tip ? 78 : 22} click={t > 0.85} />
+        </div>
+      );
+    },
   },
 ];
 
-export function HowToPlayGuide() {
+export function HowToPlayGuide({ compact = false }: { compact?: boolean } = {}) {
   const [open, setOpen] = useState(false);
   const [ch, setCh] = useState(0);
   const [elapsed, setElapsed] = useState(0);
@@ -176,9 +225,15 @@ export function HowToPlayGuide() {
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) go(0); }}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="How to Play / Video Guide" title="How to Play / Video Guide">
-          <MonitorPlay className="size-5" />
-        </Button>
+        {compact ? (
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs font-bold uppercase">
+            <MonitorPlay className="size-4 text-accent" /> How to Play &amp; Video Guide
+          </Button>
+        ) : (
+          <Button variant="ghost" size="icon" aria-label="How to Play / Video Guide" title="How to Play / Video Guide">
+            <MonitorPlay className="size-5" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-lg gap-0 overflow-hidden border-2 p-0">
         <div className="px-4 pt-4">
