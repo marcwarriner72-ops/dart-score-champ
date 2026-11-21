@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_usage_log: {
+        Row: {
+          calls: number
+          id: string
+          job: string
+          logged_at: string
+          mode: string | null
+          rate_limit_remaining: number | null
+        }
+        Insert: {
+          calls?: number
+          id?: string
+          job: string
+          logged_at?: string
+          mode?: string | null
+          rate_limit_remaining?: number | null
+        }
+        Update: {
+          calls?: number
+          id?: string
+          job?: string
+          logged_at?: string
+          mode?: string | null
+          rate_limit_remaining?: number | null
+        }
+        Relationships: []
+      }
       calendar_events: {
         Row: {
           all_day: boolean
@@ -61,6 +88,8 @@ export type Database = {
           external_event_id: string | null
           format: string
           id: string
+          live_a: number | null
+          live_b: number | null
           match_label: string | null
           player_a: string
           player_b: string
@@ -80,6 +109,8 @@ export type Database = {
           external_event_id?: string | null
           format?: string
           id?: string
+          live_a?: number | null
+          live_b?: number | null
           match_label?: string | null
           player_a: string
           player_b: string
@@ -99,6 +130,8 @@ export type Database = {
           external_event_id?: string | null
           format?: string
           id?: string
+          live_a?: number | null
+          live_b?: number | null
           match_label?: string | null
           player_a?: string
           player_b?: string

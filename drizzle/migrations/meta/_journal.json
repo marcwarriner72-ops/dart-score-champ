@@ -99,6 +99,13 @@
       "when": 1795214040040,
       "tag": "0013_fill_missing_tournament",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795291910444,
+      "tag": "0014_live_scores_api_usage",
+      "breakpoints": true
     }
   ]
 }

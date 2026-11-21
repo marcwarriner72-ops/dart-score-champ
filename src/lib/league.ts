@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type Match = {
@@ -14,6 +15,8 @@ export type Match = {
   country?: string | null;
   external_event_id?: string | null;
   total_180s?: number | null;
+  live_a?: number | null;
+  live_b?: number | null;
   session?: string | null;
   round?: string | null;
   match_label?: string | null;
@@ -195,8 +198,28 @@ export function useIsAdmin(userId: string | undefined) {
   });
 }
 
+/** Re-reads fixtures whenever a match row changes (live scores), plus a 30s fallback poll. */
+export function useLiveMatchUpdates() {
+  const qc = useQueryClient();
+  useEffect(() => {
+    const ch = supabase
+      .channel(`matches-live-${Math.random().toString(36).slice(2)}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "matches" }, () => {
+        qc.invalidateQueries({ queryKey: ["matches"] });
+        qc.invalidateQueries({ queryKey: ["tournament-leaderboard"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [qc]);
+}
+
+export function isLive(m: Match) {
+  return m.status === "live" && m.live_a != null && m.live_b != null;
+}
+
 export function useMatches() {
   return useQuery({
+    refetchInterval: 30000,
     queryKey: ["matches"],
     queryFn: async () => {
       const { data, error } = await supabase

@@ -28,6 +28,7 @@ import { Route as AuthenticatedRulesRouteImport } from './routes/_authenticated/
 import { Route as ApiPublicDailySyncRouteImport } from './routes/api/public/daily-sync'
 import { Route as ApiPublicSyncDartsFixturesRouteImport } from './routes/api/public/sync-darts-fixtures'
 import { Route as ApiPublicSyncDartsResultsRouteImport } from './routes/api/public/sync-darts-results'
+import { Route as ApiPublicSyncLiveDartsRouteImport } from './routes/api/public/sync-live-darts'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -127,6 +128,11 @@ const ApiPublicSyncDartsResultsRoute =
     path: '/api/public/sync-darts-results',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicSyncLiveDartsRoute = ApiPublicSyncLiveDartsRouteImport.update({
+  id: '/api/public/sync-live-darts',
+  path: '/api/public/sync-live-darts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
   '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
   '/api/public/sync-darts-results': typeof ApiPublicSyncDartsResultsRoute
+  '/api/public/sync-live-darts': typeof ApiPublicSyncLiveDartsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
   '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
   '/api/public/sync-darts-results': typeof ApiPublicSyncDartsResultsRoute
+  '/api/public/sync-live-darts': typeof ApiPublicSyncLiveDartsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -189,6 +197,7 @@ export interface FileRoutesById {
   '/api/public/daily-sync': typeof ApiPublicDailySyncRoute
   '/api/public/sync-darts-fixtures': typeof ApiPublicSyncDartsFixturesRoute
   '/api/public/sync-darts-results': typeof ApiPublicSyncDartsResultsRoute
+  '/api/public/sync-live-darts': typeof ApiPublicSyncLiveDartsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -211,6 +220,7 @@ export interface FileRouteTypes {
     | '/api/public/daily-sync'
     | '/api/public/sync-darts-fixtures'
     | '/api/public/sync-darts-results'
+    | '/api/public/sync-live-darts'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/api/public/daily-sync'
     | '/api/public/sync-darts-fixtures'
     | '/api/public/sync-darts-results'
+    | '/api/public/sync-live-darts'
   id:
     | '__root__'
     | '/'
@@ -252,6 +263,7 @@ export interface FileRouteTypes {
     | '/api/public/daily-sync'
     | '/api/public/sync-darts-fixtures'
     | '/api/public/sync-darts-results'
+    | '/api/public/sync-live-darts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -263,6 +275,7 @@ export interface RootRouteChildren {
   ApiPublicDailySyncRoute: typeof ApiPublicDailySyncRoute
   ApiPublicSyncDartsFixturesRoute: typeof ApiPublicSyncDartsFixturesRoute
   ApiPublicSyncDartsResultsRoute: typeof ApiPublicSyncDartsResultsRoute
+  ApiPublicSyncLiveDartsRoute: typeof ApiPublicSyncLiveDartsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -400,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicSyncDartsResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/sync-live-darts': {
+      id: '/api/public/sync-live-darts'
+      path: '/api/public/sync-live-darts'
+      fullPath: '/api/public/sync-live-darts'
+      preLoaderRoute: typeof ApiPublicSyncLiveDartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -443,6 +463,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicDailySyncRoute: ApiPublicDailySyncRoute,
   ApiPublicSyncDartsFixturesRoute: ApiPublicSyncDartsFixturesRoute,
   ApiPublicSyncDartsResultsRoute: ApiPublicSyncDartsResultsRoute,
+  ApiPublicSyncLiveDartsRoute: ApiPublicSyncLiveDartsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

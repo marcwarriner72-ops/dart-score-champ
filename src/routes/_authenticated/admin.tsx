@@ -222,7 +222,7 @@ function AdminPage() {
   });
   const now = Date.now();
   const active = visible
-    .filter((m) => m.status === "upcoming")
+    .filter((m) => m.status !== "finished")
     .filter((m) =>
       statusFilter === "needs"
         ? new Date(m.starts_at).getTime() <= now

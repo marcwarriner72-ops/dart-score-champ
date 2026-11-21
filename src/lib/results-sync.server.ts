@@ -62,6 +62,7 @@ export async function syncDartsResults(db: SupabaseClient<Database>) {
     } catch (e) { errors.push(e instanceof Error ? e.message : "error"); if (/HTTP 429/.test(String(e))) break; }
   }
   const summary = { checked: pending?.length ?? 0, graded, rate_limit_remaining: remaining, message: errors.length ? `${errors.length} lookups failed (${errors[0]})` : null };
+  await db.from("api_usage_log").insert({ job: "results", calls: (pending?.length ?? 0) ? 1 : 0, rate_limit_remaining: remaining });
   await db.from("results_sync_runs").insert({ ...summary, raw_stats_sample: (sample ?? null) as never });
   return summary;
 }

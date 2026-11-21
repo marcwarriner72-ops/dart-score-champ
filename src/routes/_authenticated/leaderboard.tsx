@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Archive, Trophy } from "lucide-react";
 import { playCheer } from "@/lib/sound";
+import { provisionalPoints } from "@/lib/live-sync";
+import { Switch } from "@/components/ui/switch";
 import { AppShell } from "@/components/AppShell";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { EmptyState } from "@/components/EmptyState";
@@ -11,6 +13,10 @@ import {
   useSession,
   useTournamentLeaderboard,
   useTournaments,
+  useMatches,
+  useVisiblePredictions,
+  isLive,
+  matchTournament,
   type LeaderboardRow,
 } from "@/lib/league";
 import {
@@ -59,7 +65,7 @@ function LeaderboardPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const current = selected ?? active[0]?.tournament ?? tournaments[0]?.tournament ?? "";
 
-  const rows: LeaderboardRow[] = useMemo(
+  const baseRows: LeaderboardRow[] = useMemo(
     () =>
       perTournament
         .filter((r) => r.tournament === current)
@@ -67,6 +73,36 @@ function LeaderboardPage() {
         .sort((a, b) => (b.points ?? 0) - (a.points ?? 0)),
     [current, perTournament],
   );
+
+  const { data: matches = [] } = useMatches();
+  const { data: allPreds = [] } = useVisiblePredictions();
+  const liveMatches = matches.filter((m) => isLive(m) && matchTournament(m) === current);
+  const anyLive = liveMatches.length > 0;
+  const [livePref, setLivePref] = useState<boolean | null>(null);
+  const liveOn = anyLive && (livePref ?? true);
+
+  const provisional = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of liveMatches) {
+      for (const p of allPreds.filter((x) => x.match_id === m.id)) {
+        const pts = provisionalPoints({ a: m.live_a!, b: m.live_b! }, p);
+        map.set(p.user_id, (map.get(p.user_id) ?? 0) + pts);
+      }
+    }
+    return map;
+  }, [liveMatches, allPreds]);
+
+  const rows: LeaderboardRow[] = useMemo(() => {
+    if (!liveOn) return baseRows;
+    return baseRows
+      .slice()
+      .sort(
+        (a, b) =>
+          (b.points ?? 0) + (provisional.get(b.user_id ?? "") ?? 0) -
+          ((a.points ?? 0) + (provisional.get(a.user_id ?? "") ?? 0)),
+      );
+  }, [baseRows, liveOn, provisional]);
+  const baseRank = new Map(baseRows.map((r, i) => [r.user_id, i]));
 
   return (
     <AppShell title="Table" subtitle="Standings reset each tournament">
@@ -84,6 +120,16 @@ function LeaderboardPage() {
             ))}
           </SelectContent>
         </Select>
+      )}
+
+      {anyLive && (
+        <label className="panel mt-4 flex items-center justify-between gap-3 p-3">
+          <span>
+            <span className="block font-display text-sm font-bold uppercase tracking-wider">Live Preview</span>
+            <span className="block text-xs text-muted-foreground">As it stands if live matches ended now · Provisional (Live)</span>
+          </span>
+          <Switch checked={liveOn} onCheckedChange={setLivePref} aria-label="Live Preview" />
+        </label>
       )}
 
       {rows.length > 0 && (
@@ -147,8 +193,20 @@ function LeaderboardPage() {
                       {row.predictions_made ?? 0} played · {row.exact_hits ?? 0} exact
                     </p>
                   </div>
-                  <span className="shrink-0 font-display text-2xl font-bold">
-                    {row.points ?? 0}
+                  <span className="shrink-0 text-right">
+                    <span className="block font-display text-2xl font-bold tabular-nums">
+                      {(row.points ?? 0) + (liveOn ? (provisional.get(row.user_id ?? "") ?? 0) : 0)}
+                    </span>
+                    {liveOn && (() => {
+                      const prov = provisional.get(row.user_id ?? "") ?? 0;
+                      const move = (baseRank.get(row.user_id) ?? i) - i;
+                      return (
+                        <span className="block text-[10px] font-semibold uppercase tracking-wide text-destructive">
+                          {move > 0 ? <span className="text-primary">▲{move} </span> : move < 0 ? <span>▼{-move} </span> : null}
+                          +{prov} Provisional (Live)
+                        </span>
+                      );
+                    })()}
                   </span>
                 </li>
               );

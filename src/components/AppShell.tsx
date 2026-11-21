@@ -4,7 +4,7 @@ import { LogOut, Target, Trophy, ListChecks, MessageCircle, Archive, BookOpen, S
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsAdmin, useMatches, useMyPredictions, useProfile, useSession } from "@/lib/league";
+import { useIsAdmin, useMatches, useLiveMatchUpdates, useMyPredictions, useProfile, useSession } from "@/lib/league";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { NextUpStrip, useMatchReminders } from "@/components/MatchReminders";
 import { Button } from "@/components/ui/button";
@@ -79,6 +79,7 @@ export function AppShell({
   const { data: profile } = useProfile(user?.id);
   const { data: isAdmin } = useIsAdmin(user?.id);
   const { data: matches = [] } = useMatches();
+  useLiveMatchUpdates();
   const { data: myPicks = [] } = useMyPredictions(user?.id);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const now = Date.now();

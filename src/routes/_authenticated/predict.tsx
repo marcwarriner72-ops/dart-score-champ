@@ -1,3 +1,4 @@
+import { LiveBadge } from "@/components/LiveBadge";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import {
   formatDate,
   guessCountry,
   hasStarted,
+  isLive,
   matchFormatLabel,
   matchTournament,
   useMatches,
@@ -66,6 +68,7 @@ function PredictPage() {
   const [onlyUnpredicted, setOnlyUnpredicted] = useState(false);
   const [expanded, setExpanded] = useState<Set<string> | null>(null);
 
+  const liveNow = matches.filter(isLive);
   const open = matches.filter((m) => m.status === "upcoming" && !hasStarted(m));
   const tournaments = Array.from(new Set(open.map(matchTournament)));
   const inTournament =
@@ -95,6 +98,25 @@ function PredictPage() {
 
   return (
     <AppShell title="Predict" subtitle="Editable until throw-off · 3 pts exact · 1 pt winner · +5 exact 180s">
+      {liveNow.length > 0 && (
+        <section className="panel mb-4 space-y-2 p-3" aria-label="Matches in play">
+          <p className="font-display text-xs uppercase tracking-[0.25em] text-muted-foreground">In play now · picks locked</p>
+          {liveNow.map((m) => {
+            const mine = predictions.find((p) => p.match_id === m.id);
+            return (
+              <div key={m.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+                <div className="min-w-0">
+                  <p className="truncate font-semibold">{m.player_a} <span className="text-accent">vs</span> {m.player_b}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {mine ? `Your pick: ${mine.score_a}–${mine.score_b}` : "No pick"}
+                  </p>
+                </div>
+                <LiveBadge match={m} />
+              </div>
+            );
+          })}
+        </section>
+      )}
       <div className="mb-4"><PushOptIn /></div>
       {isLoading ? (
         <MatchListSkeleton />
